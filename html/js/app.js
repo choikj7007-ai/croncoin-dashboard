@@ -37,7 +37,7 @@
         switch (tabName) {
             case 'blocks': loadRecentBlocks(); break;
             case 'transactions': loadRecentTxList(); break;
-            case 'wallet': loadWallet(); break;
+            case 'wallet': loadWalletGuide(); break;
             case 'mining': loadMiningInfo(); break;
             case 'richlist': loadRichList(); break;
             case 'network': loadNetworkTab(); break;
@@ -294,10 +294,42 @@
     }
 
     // ========================================================
-    // 3. WALLET
+    // 3. WALLET (Create Wallet)
     // ========================================================
 
-    document.getElementById('new-address-btn').addEventListener('click', async () => {
+    function loadWalletGuide() {
+        document.getElementById('address-guide-content').innerHTML = t('wallet.guideContent');
+        document.getElementById('new-address-guide').style.display = '';
+        document.getElementById('new-address-display').innerHTML = '';
+        // Seed backup section
+        document.getElementById('seed-warning-content').innerHTML = t('seed.warning');
+        document.getElementById('seed-display').style.display = 'none';
+        document.getElementById('seed-backup-btn').style.display = '';
+    }
+
+    document.getElementById('seed-backup-btn').addEventListener('click', async () => {
+        if (!confirm(t('seed.confirmShow'))) return;
+        try {
+            const data = await apiGet('wallet/seed');
+            let html = `<div class="key-info-group seed-info">`;
+            html += `<div class="key-info-row"><span class="key-label">${t('seed.masterKey')}:</span><span class="key-value mono-text privkey-text">${escapeHtml(data.master_key)}</span></div>`;
+            html += `<div class="key-info-row"><span class="key-label">${t('seed.walletName')}:</span><span class="key-value">${escapeHtml(data.wallet_name)}</span></div>`;
+            html += `<div class="key-info-row"><span class="key-label">${t('seed.descriptors')}:</span>`;
+            html += `<div class="seed-descriptors">`;
+            data.descriptors.forEach((d, i) => {
+                html += `<div class="key-value mono-text seed-desc-item">${escapeHtml(d)}</div>`;
+            });
+            html += `</div></div>`;
+            html += `</div>`;
+            document.getElementById('seed-display').innerHTML = html;
+            document.getElementById('seed-display').style.display = '';
+            document.getElementById('seed-backup-btn').style.display = 'none';
+        } catch (err) {
+            showToast(t('error') + ': ' + err.message, true);
+        }
+    });
+
+    document.getElementById('confirm-generate-btn').addEventListener('click', async () => {
         try {
             const data = await apiGet('wallet/newaddress');
             let html = `<div class="key-info-group">`;
@@ -312,33 +344,33 @@
         }
     });
 
+    // ========================================================
+    // 3-2. SEND COIN
+    // ========================================================
+
     document.getElementById('send-btn').addEventListener('click', async () => {
         const address = document.getElementById('send-address').value.trim();
         const amount = parseFloat(document.getElementById('send-amount').value);
         if (!address || !amount || amount <= 0) {
-            showToast(t('wallet.invalidInput'), true);
+            showToast(t('send.invalidInput'), true);
             return;
         }
-        const msg = t('wallet.confirmSend', { amount: formatAmount(amount), address: address });
+        const msg = t('send.confirmSend', { amount: formatAmount(amount), address: address });
         if (!confirm(msg)) return;
 
         try {
             const data = await apiPost('wallet/send', { address, amount });
             document.getElementById('send-result').innerHTML =
-                `<div class="address-display">${escapeHtml(t('wallet.sentTxid'))} <span class="hash-link" id="sent-txid-link">${escapeHtml(data.txid)}</span></div>`;
+                `<div class="address-display">${escapeHtml(t('send.sentTxid'))} <span class="hash-link" id="sent-txid-link">${escapeHtml(data.txid)}</span></div>`;
             document.getElementById('sent-txid-link').addEventListener('click', () => viewTransaction(data.txid));
             document.getElementById('send-address').value = '';
             document.getElementById('send-amount').value = '';
-            showToast(t('wallet.sendSuccess'));
-            loadWallet();
+            showToast(t('send.sendSuccess'));
         } catch (err) {
-            showToast(t('wallet.sendFailed') + ': ' + err.message, true);
+            showToast(t('send.sendFailed') + ': ' + err.message, true);
         }
     });
 
-    async function loadWallet() {
-        // Wallet tab no longer shows balance (moved to Mining)
-    }
 
     async function loadRecentTxList() {
         try {

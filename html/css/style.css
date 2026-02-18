@@ -540,6 +540,53 @@ td.mono {
     color: var(--success);
 }
 
+/* Address generation guide */
+.address-guide {
+    margin-top: 16px;
+}
+.guide-notice {
+    background: var(--bg-primary);
+    border: 1px solid var(--warning);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+.guide-notice strong {
+    color: var(--warning);
+}
+.guide-notice em {
+    color: var(--warning);
+    font-style: normal;
+    font-weight: 600;
+}
+.guide-notice ul {
+    margin: 12px 0 0 0;
+    padding-left: 20px;
+}
+.guide-notice li {
+    margin-bottom: 6px;
+}
+.address-guide-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+}
+.btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+}
+.btn-ghost:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+}
+
 /* Key info group */
 .key-info-group {
     margin-top: 12px;
@@ -576,6 +623,40 @@ td.mono {
 }
 .privkey-text {
     color: var(--warning);
+}
+
+/* Seed backup */
+.seed-warning {
+    border-color: var(--danger, #e74c3c);
+}
+.seed-warning strong {
+    color: var(--danger, #e74c3c);
+}
+.btn-warning {
+    background: var(--warning);
+    color: #1a1a2e;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+}
+.btn-warning:hover {
+    opacity: 0.85;
+}
+.seed-info {
+    margin-top: 16px;
+}
+.seed-descriptors {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+.seed-desc-item {
+    font-size: 12px;
+    line-height: 1.5;
 }
 
 /* Mining result */

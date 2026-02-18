@@ -14,7 +14,8 @@
     <div class="tabs">
         <button class="tab active" data-tab="blocks" data-i18n="tab.blocks">Block Explorer</button>
         <button class="tab" data-tab="transactions" data-i18n="tab.transactions">Transactions</button>
-        <button class="tab" data-tab="wallet" data-i18n="tab.wallet">Wallet</button>
+        <button class="tab" data-tab="wallet" data-i18n="tab.wallet">Create Wallet</button>
+        <button class="tab" data-tab="send" data-i18n="tab.send">Send Coin</button>
         <button class="tab" data-tab="mining" data-i18n="tab.mining">Mining</button>
         <button class="tab" data-tab="richlist" data-i18n="tab.richlist">Rich List</button>
         <button class="tab" data-tab="network" data-i18n="tab.network">Network</button>
@@ -127,23 +128,40 @@
     <div class="tab-content" id="tab-wallet">
         <div class="card">
             <div class="card-title" data-i18n="wallet.newAddress">New Address</div>
-            <button class="btn btn-secondary" id="new-address-btn" data-i18n="wallet.generateAddress">Generate New Address</button>
+            <div id="new-address-guide" class="address-guide">
+                <div class="guide-notice" id="address-guide-content"></div>
+                <div class="address-guide-actions">
+                    <button class="btn btn-primary" id="confirm-generate-btn" data-i18n="wallet.confirmGenerate">Generate Address</button>
+                </div>
+            </div>
             <div id="new-address-display"></div>
         </div>
 
         <div class="card">
-            <div class="card-title" data-i18n="wallet.sendCRN">Send CRN</div>
+            <div class="card-title" data-i18n="seed.title">HD Seed Backup</div>
+            <div class="guide-notice seed-warning" id="seed-warning-content"></div>
+            <div class="address-guide-actions">
+                <button class="btn btn-warning" id="seed-backup-btn" data-i18n="seed.showBtn">Show Seed</button>
+            </div>
+            <div id="seed-display" style="display:none"></div>
+        </div>
+    </div>
+
+    <!-- 3-2. Send Coin -->
+    <div class="tab-content" id="tab-send">
+        <div class="card">
+            <div class="card-title" data-i18n="send.title">Send CRN</div>
             <div class="form-row">
                 <div class="form-group">
-                    <label data-i18n="wallet.recipientAddress">Recipient Address</label>
-                    <input type="text" id="send-address" data-i18n-placeholder="wallet.addressPlaceholder" placeholder="croncoin address...">
+                    <label data-i18n="send.recipientAddress">Recipient Address</label>
+                    <input type="text" id="send-address" data-i18n-placeholder="send.addressPlaceholder" placeholder="croncoin address...">
                 </div>
                 <div class="form-group">
-                    <label data-i18n="wallet.amount">Amount (CRN)</label>
+                    <label data-i18n="send.amount">Amount (CRN)</label>
                     <input type="number" id="send-amount" step="0.001" min="0.001" placeholder="0.000">
                 </div>
             </div>
-            <button class="btn btn-primary" id="send-btn" data-i18n="wallet.send">Send</button>
+            <button class="btn btn-primary" id="send-btn" data-i18n="send.sendBtn">Send</button>
             <div id="send-result"></div>
         </div>
     </div>

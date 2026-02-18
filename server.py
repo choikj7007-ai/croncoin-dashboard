@@ -349,6 +349,30 @@ def get_balance(handler, match):
     json_response(handler, result)
 
 
+@route("GET", r"/api/wallet/seed")
+def get_wallet_seed(handler, match):
+    result, err = rpc_call("listdescriptors", [True])
+    if err:
+        return error_response(handler, err.get("message", "Failed to get descriptors"))
+    descriptors = []
+    master_tprv = None
+    for d in result.get("descriptors", []):
+        desc = d.get("desc", "")
+        descriptors.append(desc)
+        if not master_tprv:
+            m = re.match(r"^(?:sh\()?wpkh\((tprv[A-Za-z0-9]+)/", desc)
+            if m:
+                master_tprv = m.group(1)
+    info, err2 = rpc_call("getwalletinfo")
+    resp = {
+        "master_key": master_tprv or "",
+        "descriptors": descriptors,
+        "wallet_name": info.get("walletname", "") if not err2 else "",
+        "keypoolsize": info.get("keypoolsize", 0) if not err2 else 0,
+    }
+    json_response(handler, resp)
+
+
 @route("GET", r"/api/wallet/newaddress")
 def get_new_address(handler, match):
     address, err = rpc_call("getnewaddress")
