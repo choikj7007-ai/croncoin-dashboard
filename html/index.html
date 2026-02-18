@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CronCoin Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Header & Tabs -->
+<div class="header">
+    <div class="logo">CronCoin <span>Dashboard</span> <span class="chain-badge" id="chain-badge"></span></div>
+    <div class="tabs">
+        <button class="tab active" data-tab="blocks" data-i18n="tab.blocks">Block Explorer</button>
+        <button class="tab" data-tab="transactions" data-i18n="tab.transactions">Transactions</button>
+        <button class="tab" data-tab="wallet" data-i18n="tab.wallet">Wallet</button>
+        <button class="tab" data-tab="mining" data-i18n="tab.mining">Mining</button>
+        <button class="tab" data-tab="richlist" data-i18n="tab.richlist">Rich List</button>
+        <button class="tab" data-tab="network" data-i18n="tab.network">Network</button>
+        <button class="tab" data-tab="dice" data-i18n="tab.dice">Dice</button>
+        <button class="tab" data-tab="guide" data-i18n="tab.guide">Guide</button>
+    </div>
+    <button class="lang-btn" id="lang-btn" title="Switch language">EN | 한</button>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+    <div id="global-notice" class="notice notice-warning" style="display:none;max-width:1200px;margin:0 auto 16px"></div>
+
+    <!-- 1. Block Explorer -->
+    <div class="tab-content active" id="tab-blocks">
+        <div class="search-bar">
+            <input type="text" id="block-search" data-i18n-placeholder="block.searchPlaceholder" placeholder="Search by block hash or height...">
+            <button class="btn btn-primary" id="block-search-btn" data-i18n="search">Search</button>
+        </div>
+
+        <!-- Block Detail (hidden by default) -->
+        <div id="block-detail" class="card" style="display:none">
+            <div class="card-title" data-i18n="block.detail">Block Detail</div>
+            <div class="info-grid" id="block-detail-info"></div>
+            <div id="block-metadata"></div>
+            <div style="margin-top:16px">
+                <div class="card-title" data-i18n="block.transactions">Transactions</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th data-i18n="th.txid">TxID</th>
+                            <th data-i18n="th.size">Size</th>
+                            <th data-i18n="th.inputs">Inputs</th>
+                            <th data-i18n="th.outputs">Outputs</th>
+                        </tr></thead>
+                        <tbody id="block-tx-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Blocks -->
+        <div class="card">
+            <div class="card-title" data-i18n="block.recentBlocks">Recent Blocks</div>
+            <div id="recent-blocks" class="block-list">
+                <div class="loading" data-i18n="loading">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Transaction Explorer -->
+    <div class="tab-content" id="tab-transactions">
+        <div class="search-bar">
+            <input type="text" id="tx-search" data-i18n-placeholder="tx.searchPlaceholder" placeholder="Search by transaction ID...">
+            <button class="btn btn-primary" id="tx-search-btn" data-i18n="search">Search</button>
+        </div>
+
+        <div id="tx-detail" class="card" style="display:none">
+            <div class="card-title" data-i18n="tx.detail">Transaction Detail</div>
+            <div class="info-grid" id="tx-detail-info"></div>
+            <div id="tx-metadata"></div>
+
+            <div style="margin-top:16px">
+                <div class="card-title" data-i18n="tx.inputs">Inputs</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th data-i18n="th.txid">TxID</th>
+                            <th data-i18n="th.vout">Vout</th>
+                            <th data-i18n="th.scriptSig">ScriptSig / Witness</th>
+                        </tr></thead>
+                        <tbody id="tx-inputs"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-top:16px">
+                <div class="card-title" data-i18n="tx.outputs">Outputs</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th data-i18n="th.index">#</th>
+                            <th data-i18n="th.amount">Amount (CRN)</th>
+                            <th data-i18n="th.addressScript">Address / Script</th>
+                        </tr></thead>
+                        <tbody id="tx-outputs"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" data-i18n="wallet.recentTx">Recent Transactions</div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th data-i18n="th.txid">TxID</th>
+                        <th data-i18n="th.category">Category</th>
+                        <th data-i18n="th.amount">Amount</th>
+                        <th data-i18n="th.confirmations">Confirmations</th>
+                        <th data-i18n="th.time">Time</th>
+                    </tr></thead>
+                    <tbody id="wallet-tx-list"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Wallet -->
+    <div class="tab-content" id="tab-wallet">
+        <div class="card">
+            <div class="card-title" data-i18n="wallet.newAddress">New Address</div>
+            <button class="btn btn-secondary" id="new-address-btn" data-i18n="wallet.generateAddress">Generate New Address</button>
+            <div id="new-address-display"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" data-i18n="wallet.sendCRN">Send CRN</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-i18n="wallet.recipientAddress">Recipient Address</label>
+                    <input type="text" id="send-address" data-i18n-placeholder="wallet.addressPlaceholder" placeholder="croncoin address...">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="wallet.amount">Amount (CRN)</label>
+                    <input type="number" id="send-amount" step="0.001" min="0.001" placeholder="0.000">
+                </div>
+            </div>
+            <button class="btn btn-primary" id="send-btn" data-i18n="wallet.send">Send</button>
+            <div id="send-result"></div>
+        </div>
+    </div>
+
+    <!-- 4. Mining -->
+    <div class="tab-content" id="tab-mining">
+        <div class="card">
+            <div class="balance-display">
+                <div class="balance-label" data-i18n="mining.miningBalance">Mining Balance</div>
+                <div class="balance-amount" id="mining-balance">—</div>
+            </div>
+            <div class="info-grid" id="mining-balance-grid"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" data-i18n="mining.info">Mining Info</div>
+            <div class="info-grid" id="mining-info-grid"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" data-i18n="mining.generateBlocks">Generate Blocks</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label data-i18n="mining.numBlocks">Number of Blocks</label>
+                    <input type="number" id="mine-count" value="1" min="1" max="1000">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="mining.addressLabel">Address (leave empty for wallet default)</label>
+                    <input type="text" id="mine-address" data-i18n-placeholder="mining.addressPlaceholder" placeholder="optional address...">
+                </div>
+            </div>
+            <button class="btn btn-primary" id="mine-btn" data-i18n="mining.mineBtn">Mine Blocks</button>
+            <div id="mine-result" class="mine-result"></div>
+        </div>
+    </div>
+
+    <!-- 5. Rich List -->
+    <div class="tab-content" id="tab-richlist">
+        <div class="card">
+            <div class="card-title" data-i18n="richlist.title">Top Addresses by Balance</div>
+            <div class="info-grid" id="richlist-summary"></div>
+        </div>
+        <div class="card">
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th data-i18n="richlist.rank">#</th>
+                        <th data-i18n="th.address">Address</th>
+                        <th data-i18n="richlist.balance">Balance (CRN)</th>
+                        <th data-i18n="richlist.percent">% of Supply</th>
+                    </tr></thead>
+                    <tbody id="richlist-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Network Status -->
+    <div class="tab-content" id="tab-network">
+        <div class="card">
+            <div class="card-title" data-i18n="network.blockchain">Blockchain</div>
+            <div class="info-grid" id="chain-info-grid"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" data-i18n="network.network">Network</div>
+            <div class="info-grid" id="net-info-grid"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" data-i18n="network.mempool">Mempool</div>
+            <div class="info-grid" id="mempool-info-grid"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" data-i18n="network.peers">Connected Peers</div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th data-i18n="th.address">Address</th>
+                        <th data-i18n="th.subversion">Subversion</th>
+                        <th data-i18n="th.ping">Ping (ms)</th>
+                        <th data-i18n="th.sent">Sent</th>
+                        <th data-i18n="th.received">Received</th>
+                    </tr></thead>
+                    <tbody id="peer-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Dice -->
+    <div class="tab-content" id="tab-dice">
+        <div class="card">
+            <div class="card-title" id="dice-next-title">Next Block Dice</div>
+            <div class="dice-hero" id="dice-hero">
+                <div class="dice-face" id="dice-face" data-value="?">
+                    <div class="dice-question">?</div>
+                </div>
+                <div class="dice-countdown" id="dice-countdown"></div>
+                <div class="dice-hero-info" id="dice-hero-info"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" data-i18n="dice.history">Block Dice History</div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr>
+                        <th data-i18n="dice.block">Block</th>
+                        <th data-i18n="dice.value">Dice</th>
+                        <th data-i18n="dice.oddEven">Odd/Even</th>
+                        <th data-i18n="dice.time">Time</th>
+                        <th data-i18n="dice.hash">Block Hash</th>
+                    </tr></thead>
+                    <tbody id="dice-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. Guide -->
+    <div class="tab-content" id="tab-guide">
+        <div class="card">
+            <div class="card-title" data-i18n="guide.title">Dashboard Guide</div>
+            <div class="guide-content" id="guide-content"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Status Bar -->
+<div class="status-bar">
+    <div class="status-item">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-chain">—</span>
+    </div>
+    <div class="status-item"><span data-i18n="status.height">Height</span>: <span id="status-height">—</span></div>
+    <div class="status-item"><span data-i18n="status.connections">Connections</span>: <span id="status-connections">—</span></div>
+    <div class="status-item"><span data-i18n="status.mempool">Mempool</span>: <span id="status-mempool">—</span></div>
+    <div class="status-item"><span data-i18n="status.supply">Supply</span>: <span id="status-supply">—</span></div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script src="js/i18n.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

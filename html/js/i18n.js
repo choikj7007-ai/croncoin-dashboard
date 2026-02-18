@@ -1,0 +1,492 @@
+/* CronCoin Dashboard - Internationalization */
+
+const I18N = {
+    en: {
+        // Tabs
+        'tab.blocks': 'Block Explorer',
+        'tab.transactions': 'Transactions',
+        'tab.wallet': 'Wallet',
+        'tab.mining': 'Mining',
+        'tab.network': 'Network',
+
+        // Common
+        'search': 'Search',
+        'loading': 'Loading...',
+        'yes': 'Yes',
+        'no': 'No',
+        'error': 'Error',
+
+        // Block Explorer
+        'block.searchPlaceholder': 'Search by block hash or height...',
+        'block.detail': 'Block Detail',
+        'block.transactions': 'Transactions',
+        'block.recentBlocks': 'Recent Blocks',
+        'block.notFound': 'Block not found',
+        'block.noBlocks': 'No blocks found',
+        'block.height': 'Height',
+        'block.hash': 'Hash',
+        'block.prevHash': 'Previous Hash',
+        'block.time': 'Time',
+        'block.difficulty': 'Difficulty',
+        'block.size': 'Size',
+        'block.weight': 'Weight',
+        'block.version': 'Version',
+        'block.merkleRoot': 'Merkle Root',
+        'block.nonce': 'Nonce',
+        'block.bits': 'Bits',
+        'block.genesis': 'Genesis',
+        'block.coinbaseMeta': 'Coinbase Metadata',
+
+        // Block/Tx table headers
+        'th.txid': 'TxID',
+        'th.size': 'Size',
+        'th.inputs': 'Inputs',
+        'th.outputs': 'Outputs',
+
+        // Transaction Explorer
+        'tx.searchPlaceholder': 'Search by transaction ID...',
+        'tx.detail': 'Transaction Detail',
+        'tx.inputs': 'Inputs',
+        'tx.outputs': 'Outputs',
+        'tx.notFound': 'Transaction not found',
+        'tx.txid': 'TxID',
+        'tx.size': 'Size',
+        'tx.vsize': 'Virtual Size',
+        'tx.weight': 'Weight',
+        'tx.version': 'Version',
+        'tx.locktime': 'Locktime',
+        'tx.confirmations': 'Confirmations',
+        'tx.blockHash': 'Block Hash',
+        'tx.type': 'Type',
+        'tx.coinbase': 'Coinbase',
+        'tx.regular': 'Regular',
+        'tx.unconfirmed': 'Unconfirmed',
+        'tx.opReturnMeta': 'OP_RETURN Metadata',
+        'th.vout': 'Vout',
+        'th.scriptSig': 'ScriptSig / Witness',
+        'th.index': '#',
+        'th.amount': 'Amount (CRN)',
+        'th.addressScript': 'Address / Script',
+
+        // Wallet
+        'wallet.balance': 'Available Balance',
+        'wallet.newAddress': 'New Address',
+        'wallet.generateAddress': 'Generate New Address',
+        'wallet.sendCRN': 'Send CRN',
+        'wallet.recipientAddress': 'Recipient Address',
+        'wallet.amount': 'Amount (CRN)',
+        'wallet.addressPlaceholder': 'croncoin address...',
+        'wallet.send': 'Send',
+        'wallet.recentTx': 'Recent Transactions',
+        'wallet.trusted': 'Trusted',
+        'wallet.pending': 'Pending',
+        'wallet.immature': 'Immature',
+        'wallet.walletName': 'Wallet Name',
+        'wallet.txCount': 'Tx Count',
+        'wallet.keyPoolSize': 'Key Pool Size',
+        'wallet.addressGenerated': 'New address generated',
+        'wallet.invalidInput': 'Enter a valid address and amount',
+        'wallet.confirmSend': 'Send {amount} CRN to {address}?',
+        'wallet.sentTxid': 'Sent! TxID:',
+        'wallet.sendSuccess': 'Transaction sent successfully',
+        'wallet.sendFailed': 'Send failed',
+        'wallet.error': 'Wallet error',
+        'th.category': 'Category',
+        'th.confirmations': 'Confirmations',
+        'th.time': 'Time',
+
+        // Mining
+        'mining.miningBalance': 'Mining Balance',
+        'mining.info': 'Mining Info',
+        'mining.generateBlocks': 'Generate Blocks',
+        'mining.numBlocks': 'Number of Blocks',
+        'mining.addressLabel': 'Address (leave empty for wallet default)',
+        'mining.addressPlaceholder': 'optional address...',
+        'mining.mineBtn': 'Mine Blocks',
+        'mining.mining': 'Mining...',
+        'mining.currentHeight': 'Current Height',
+        'mining.difficulty': 'Difficulty',
+        'mining.hashrate': 'Network Hashrate',
+        'mining.chain': 'Chain',
+        'mining.blockReward': 'Current Block Reward',
+        'mining.blocksUntilHalving': 'Blocks Until Halving',
+        'mining.totalSupply': 'Total Supply',
+        'mining.poolSize': 'Pool Size (bytes)',
+        'mining.minedResult': 'Mined {count} block(s) to {address}',
+        'mining.minedToast': 'Mined {count} block(s)',
+        'mining.error': 'Mining error',
+
+        // Rich List
+        'tab.richlist': 'Rich List',
+        'richlist.title': 'Top Addresses by Balance',
+        'richlist.rank': '#',
+        'richlist.balance': 'Balance (CRN)',
+        'richlist.percent': '% of Supply',
+        'richlist.totalAddresses': 'Total Addresses',
+        'richlist.totalSupply': 'Total Supply',
+        'richlist.scannedHeight': 'Scanned Height',
+        'richlist.chain': 'Network',
+        'richlist.loading': 'Scanning blocks...',
+        'richlist.error': 'Rich list error',
+        'richlist.regtestNotice': 'This is a regtest (local test) network. All coins shown here were generated via test mining and have no real value.',
+
+        // Chain badge
+        'chain.regtest': 'REGTEST',
+        'chain.testnet': 'TESTNET',
+        'chain.mainnet': 'MAINNET',
+
+        // Network
+        'network.blockchain': 'Blockchain',
+        'network.network': 'Network',
+        'network.mempool': 'Mempool',
+        'network.peers': 'Connected Peers',
+        'network.chain': 'Chain',
+        'network.blocks': 'Blocks',
+        'network.headers': 'Headers',
+        'network.bestBlockHash': 'Best Block Hash',
+        'network.difficulty': 'Difficulty',
+        'network.medianTime': 'Median Time',
+        'network.verificationProgress': 'Verification Progress',
+        'network.pruned': 'Pruned',
+        'network.totalSupply': 'Total Supply',
+        'network.sizeOnDisk': 'Size on Disk',
+        'network.version': 'Version',
+        'network.subversion': 'Subversion',
+        'network.protocol': 'Protocol',
+        'network.connections': 'Connections',
+        'network.connectionsIn': 'Connections In',
+        'network.connectionsOut': 'Connections Out',
+        'network.localRelay': 'Local Relay',
+        'network.networkActive': 'Network Active',
+        'network.transactions': 'Transactions',
+        'network.size': 'Size',
+        'network.usage': 'Usage',
+        'network.maxSize': 'Max Size',
+        'network.minFee': 'Min Fee (CRN/kvB)',
+        'network.minRelayFee': 'Min Relay Fee',
+        'network.incrementalFee': 'Incremental Fee',
+        'network.unbroadcast': 'Unbroadcast',
+        'network.noPeers': 'No peers connected',
+        'network.error': 'Network info error',
+        'th.address': 'Address',
+        'th.subversion': 'Subversion',
+        'th.ping': 'Ping (ms)',
+        'th.sent': 'Sent',
+        'th.received': 'Received',
+
+        // Dice
+        'tab.dice': 'Dice',
+        'dice.nextBlock': 'Block Dice #{height}',
+        'dice.history': 'Block Dice History',
+        'dice.block': 'Block',
+        'dice.value': 'Dice',
+        'dice.oddEven': 'Odd / Even',
+        'dice.time': 'Time',
+        'dice.hash': 'Block Hash',
+        'dice.odd': 'Odd',
+        'dice.even': 'Even',
+        'dice.blockHeight': 'Block Height',
+        'dice.result': 'Dice Result',
+        'dice.error': 'Dice error',
+        'dice.waiting': 'Remaining',
+        'dice.revealed': 'Block #{height} Result',
+
+        // Guide
+        'tab.guide': 'Guide',
+        'guide.title': 'Dashboard Guide',
+        'guide.blocks.title': 'Block Explorer',
+        'guide.blocks.desc': 'Search blocks by hash or height number. View the latest 10 blocks with height, hash, transaction count, size, time, and coinbase metadata. Click a block to see full header details (difficulty, nonce, version, merkle root, etc.) and the list of transactions included.',
+        'guide.tx.title': 'Transactions',
+        'guide.tx.desc': 'Search transactions by TxID. View detailed information including txid, size, vsize, weight, version, locktime, confirmations, and block hash. Inputs and outputs are displayed in separate tables with amounts in CRN (3 decimal places). Coinbase transactions show decoded OP_RETURN metadata. Recent wallet transactions are also listed here with category, amount, confirmations, and time.',
+        'guide.wallet.title': 'Wallet',
+        'guide.wallet.desc': 'Generate new CronCoin receiving addresses and send CRN to other addresses with a confirmation dialog. The wallet tab is focused on address management and transfers.',
+        'guide.mining.title': 'Mining',
+        'guide.mining.desc': 'View mining balance at the top (trusted, immature, pending — mining rewards need 100 block confirmations to mature). Below that, mining info shows current block height, difficulty, hashrate, block reward, blocks until next halving, and total supply. Generate new blocks by specifying the number and an optional address. Generated block hashes are clickable links to the Block Explorer.',
+        'guide.richlist.title': 'Rich List',
+        'guide.richlist.desc': 'View the top addresses ranked by CRN balance. Shows scanned height, total supply, number of addresses, and each address\'s percentage of total supply. Balances are calculated by scanning all blocks and building a UTXO map.',
+        'guide.network.title': 'Network',
+        'guide.network.desc': 'View blockchain info (chain type, blocks, headers, best block hash, difficulty, median time, verification progress, total supply, pruning, disk usage). Network info (version, protocol, connections). Mempool stats (size, fees). Connected peers with address, subversion, ping, and bandwidth.',
+        'guide.dice.title': 'Dice',
+        'guide.dice.desc': 'A fun feature that derives a dice value (1-6) from each block\'s coinbase OP_RETURN metadata. The top section shows the next block\'s dice with a countdown timer (3-minute block interval). When a new block is mined, the result is revealed with applause sound for 5 seconds, then resets to countdown mode. The history table shows the last 20 blocks with dice value, odd/even, time, and block hash.',
+        'guide.common.title': 'Common Features',
+        'guide.common.desc': 'Language Switch: Toggle English/Korean with the button in the top-right corner (saved in browser). Status Bar: Bottom bar shows chain type, block height, connections, mempool size, and total supply (auto-refreshes every 30 seconds). Chain Badge: Header displays REGTEST/TESTNET/MAINNET indicator. Tab Persistence: Your selected tab is preserved in the URL when refreshing the page.',
+
+        // Status bar
+        'status.height': 'Height',
+        'status.connections': 'Connections',
+        'status.mempool': 'Mempool',
+        'status.supply': 'Supply',
+        'status.disconnected': 'Disconnected',
+    },
+
+    ko: {
+        // Tabs
+        'tab.blocks': '\uBE14\uB85D \uD0D0\uC0C9\uAE30',
+        'tab.transactions': '\uD2B8\uB79C\uC7AD\uC158',
+        'tab.wallet': '\uC9C0\uAC11',
+        'tab.mining': '\uCC44\uAD74',
+        'tab.network': '\uB124\uD2B8\uC6CC\uD06C',
+
+        // Common
+        'search': '\uAC80\uC0C9',
+        'loading': '\uB85C\uB529 \uC911...',
+        'yes': '\uC608',
+        'no': '\uC544\uB2C8\uC624',
+        'error': '\uC624\uB958',
+
+        // Block Explorer
+        'block.searchPlaceholder': '\uBE14\uB85D \uD574\uC2DC \uB610\uB294 \uB192\uC774\uB85C \uAC80\uC0C9...',
+        'block.detail': '\uBE14\uB85D \uC0C1\uC138',
+        'block.transactions': '\uD2B8\uB79C\uC7AD\uC158',
+        'block.recentBlocks': '\uCD5C\uADFC \uBE14\uB85D',
+        'block.notFound': '\uBE14\uB85D\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4',
+        'block.noBlocks': '\uBE14\uB85D\uC774 \uC5C6\uC2B5\uB2C8\uB2E4',
+        'block.height': '\uB192\uC774',
+        'block.hash': '\uD574\uC2DC',
+        'block.prevHash': '\uC774\uC804 \uD574\uC2DC',
+        'block.time': '\uC2DC\uAC04',
+        'block.difficulty': '\uB09C\uC774\uB3C4',
+        'block.size': '\uD06C\uAE30',
+        'block.weight': '\uAC00\uC911\uCE58',
+        'block.version': '\uBC84\uC804',
+        'block.merkleRoot': '\uBA38\uD074 \uB8E8\uD2B8',
+        'block.nonce': '\uB17C\uC2A4',
+        'block.bits': '\uBE44\uD2B8',
+        'block.genesis': '\uC81C\uB124\uC2DC\uC2A4',
+        'block.coinbaseMeta': '\uCF54\uC778\uBCA0\uC774\uC2A4 \uBA54\uD0C0\uB370\uC774\uD130',
+
+        // Block/Tx table headers
+        'th.txid': '\uD2B8\uB79C\uC7AD\uC158 ID',
+        'th.size': '\uD06C\uAE30',
+        'th.inputs': '\uC785\uB825',
+        'th.outputs': '\uCD9C\uB825',
+
+        // Transaction Explorer
+        'tx.searchPlaceholder': '\uD2B8\uB79C\uC7AD\uC158 ID\uB85C \uAC80\uC0C9...',
+        'tx.detail': '\uD2B8\uB79C\uC7AD\uC158 \uC0C1\uC138',
+        'tx.inputs': '\uC785\uB825',
+        'tx.outputs': '\uCD9C\uB825',
+        'tx.notFound': '\uD2B8\uB79C\uC7AD\uC158\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4',
+        'tx.txid': '\uD2B8\uB79C\uC7AD\uC158 ID',
+        'tx.size': '\uD06C\uAE30',
+        'tx.vsize': '\uAC00\uC0C1 \uD06C\uAE30',
+        'tx.weight': '\uAC00\uC911\uCE58',
+        'tx.version': '\uBC84\uC804',
+        'tx.locktime': '\uC7A0\uAE08 \uC2DC\uAC04',
+        'tx.confirmations': '\uD655\uC778 \uC218',
+        'tx.blockHash': '\uBE14\uB85D \uD574\uC2DC',
+        'tx.type': '\uC720\uD615',
+        'tx.coinbase': '\uCF54\uC778\uBCA0\uC774\uC2A4',
+        'tx.regular': '\uC77C\uBC18',
+        'tx.unconfirmed': '\uBBF8\uD655\uC778',
+        'tx.opReturnMeta': 'OP_RETURN \uBA54\uD0C0\uB370\uC774\uD130',
+        'th.vout': '\uCD9C\uB825 \uBC88\uD638',
+        'th.scriptSig': '\uC2A4\uD06C\uB9BD\uD2B8 / \uC99D\uC778',
+        'th.index': '#',
+        'th.amount': '\uAE08\uC561 (CRN)',
+        'th.addressScript': '\uC8FC\uC18C / \uC2A4\uD06C\uB9BD\uD2B8',
+
+        // Wallet
+        'wallet.balance': '\uC0AC\uC6A9 \uAC00\uB2A5 \uC794\uC561',
+        'wallet.newAddress': '\uC0C8 \uC8FC\uC18C',
+        'wallet.generateAddress': '\uC0C8 \uC8FC\uC18C \uC0DD\uC131',
+        'wallet.sendCRN': 'CRN \uC804\uC1A1',
+        'wallet.recipientAddress': '\uBC1B\uB294 \uC8FC\uC18C',
+        'wallet.amount': '\uAE08\uC561 (CRN)',
+        'wallet.addressPlaceholder': 'croncoin \uC8FC\uC18C...',
+        'wallet.send': '\uC804\uC1A1',
+        'wallet.recentTx': '\uCD5C\uADFC \uD2B8\uB79C\uC7AD\uC158',
+        'wallet.trusted': '\uD655\uC778\uB428',
+        'wallet.pending': '\uB300\uAE30 \uC911',
+        'wallet.immature': '\uBBF8\uC131\uC219',
+        'wallet.walletName': '\uC9C0\uAC11 \uC774\uB984',
+        'wallet.txCount': '\uD2B8\uB79C\uC7AD\uC158 \uC218',
+        'wallet.keyPoolSize': '\uD0A4 \uD480 \uD06C\uAE30',
+        'wallet.addressGenerated': '\uC0C8 \uC8FC\uC18C\uAC00 \uC0DD\uC131\uB418\uC5C8\uC2B5\uB2C8\uB2E4',
+        'wallet.invalidInput': '\uC720\uD6A8\uD55C \uC8FC\uC18C\uC640 \uAE08\uC561\uC744 \uC785\uB825\uD558\uC138\uC694',
+        'wallet.confirmSend': '{address}\uB85C {amount} CRN\uC744 \uBCF4\uB0B4\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?',
+        'wallet.sentTxid': '\uC804\uC1A1 \uC644\uB8CC! TxID:',
+        'wallet.sendSuccess': '\uD2B8\uB79C\uC7AD\uC158\uC774 \uC131\uACF5\uC801\uC73C\uB85C \uC804\uC1A1\uB418\uC5C8\uC2B5\uB2C8\uB2E4',
+        'wallet.sendFailed': '\uC804\uC1A1 \uC2E4\uD328',
+        'wallet.error': '\uC9C0\uAC11 \uC624\uB958',
+        'th.category': '\uC720\uD615',
+        'th.confirmations': '\uD655\uC778 \uC218',
+        'th.time': '\uC2DC\uAC04',
+
+        // Mining
+        'mining.miningBalance': '채굴 잔액',
+        'mining.info': '채굴 정보',
+        'mining.generateBlocks': '블록 생성',
+        'mining.numBlocks': '\uBE14\uB85D \uC218',
+        'mining.addressLabel': '\uC8FC\uC18C (\uBE44\uC6CC\uB450\uBA74 \uAE30\uBCF8 \uC9C0\uAC11 \uC8FC\uC18C \uC0AC\uC6A9)',
+        'mining.addressPlaceholder': '\uC120\uD0DD \uC8FC\uC18C...',
+        'mining.mineBtn': '\uCC44\uAD74 \uC2DC\uC791',
+        'mining.mining': '\uCC44\uAD74 \uC911...',
+        'mining.currentHeight': '\uD604\uC7AC \uB192\uC774',
+        'mining.difficulty': '\uB09C\uC774\uB3C4',
+        'mining.hashrate': '\uB124\uD2B8\uC6CC\uD06C \uD574\uC2DC\uB808\uC774\uD2B8',
+        'mining.chain': '\uCCB4\uC778',
+        'mining.blockReward': '\uD604\uC7AC \uBE14\uB85D \uBCF4\uC0C1',
+        'mining.blocksUntilHalving': '\uBC18\uAC10\uAE30\uAE4C\uC9C0 \uB0A8\uC740 \uBE14\uB85D',
+        'mining.totalSupply': '\uCD1D \uBC1C\uD589\uB7C9',
+        'mining.poolSize': '\uD480 \uD06C\uAE30 (\uBC14\uC774\uD2B8)',
+        'mining.minedResult': '{address}\uB85C {count}\uAC1C \uBE14\uB85D \uCC44\uAD74 \uC644\uB8CC',
+        'mining.minedToast': '{count}\uAC1C \uBE14\uB85D \uCC44\uAD74 \uC644\uB8CC',
+        'mining.error': '\uCC44\uAD74 \uC624\uB958',
+
+        // Rich List
+        'tab.richlist': '\uBCF4\uC720\uB7C9 \uC21C\uC704',
+        'richlist.title': '\uC8FC\uC18C\uBCC4 \uBCF4\uC720\uB7C9 \uC21C\uC704',
+        'richlist.rank': '#',
+        'richlist.balance': '\uC794\uC561 (CRN)',
+        'richlist.percent': '\uBE44\uC728 (%)',
+        'richlist.totalAddresses': '\uCD1D \uC8FC\uC18C \uC218',
+        'richlist.totalSupply': '\uCD1D \uBC1C\uD589\uB7C9',
+        'richlist.scannedHeight': '\uC2A4\uCE94 \uB192\uC774',
+        'richlist.chain': '\uB124\uD2B8\uC6CC\uD06C',
+        'richlist.loading': '\uBE14\uB85D \uC2A4\uCE94 \uC911...',
+        'richlist.error': '\uBCF4\uC720\uB7C9 \uC21C\uC704 \uC624\uB958',
+        'richlist.regtestNotice': '\uD604\uC7AC regtest (\uB85C\uCEEC \uD14C\uC2A4\uD2B8) \uB124\uD2B8\uC6CC\uD06C\uC5D0 \uC5F0\uACB0\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4. \uD45C\uC2DC\uB41C \uBAA8\uB4E0 \uCF54\uC778\uC740 \uD14C\uC2A4\uD2B8 \uCC44\uAD74\uC744 \uD1B5\uD574 \uC0DD\uC131\uB41C \uAC83\uC73C\uB85C \uC2E4\uC81C \uAC00\uCE58\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.',
+
+        // Chain badge
+        'chain.regtest': 'REGTEST',
+        'chain.testnet': '\uD14C\uC2A4\uD2B8\uB137',
+        'chain.mainnet': '\uBA54\uC778\uB137',
+
+        // Network
+        'network.blockchain': '\uBE14\uB85D\uCCB4\uC778',
+        'network.network': '\uB124\uD2B8\uC6CC\uD06C',
+        'network.mempool': '\uBA54\uBAA8\uB9AC \uD480',
+        'network.peers': '\uC5F0\uACB0\uB41C \uD53C\uC5B4',
+        'network.chain': '\uCCB4\uC778',
+        'network.blocks': '\uBE14\uB85D \uC218',
+        'network.headers': '\uD5E4\uB354 \uC218',
+        'network.bestBlockHash': '\uCD5C\uC2E0 \uBE14\uB85D \uD574\uC2DC',
+        'network.difficulty': '\uB09C\uC774\uB3C4',
+        'network.medianTime': '\uC911\uAC04 \uC2DC\uAC04',
+        'network.verificationProgress': '\uAC80\uC99D \uC9C4\uD589\uB960',
+        'network.pruned': '\uD504\uB8E8\uB2DD',
+        'network.totalSupply': '\uCD1D \uBC1C\uD589\uB7C9',
+        'network.sizeOnDisk': '\uB514\uC2A4\uD06C \uD06C\uAE30',
+        'network.version': '\uBC84\uC804',
+        'network.subversion': '\uC11C\uBE0C\uBC84\uC804',
+        'network.protocol': '\uD504\uB85C\uD1A0\uCF5C',
+        'network.connections': '\uC5F0\uACB0 \uC218',
+        'network.connectionsIn': '\uC778\uBC14\uC6B4\uB4DC',
+        'network.connectionsOut': '\uC544\uC6C3\uBC14\uC6B4\uB4DC',
+        'network.localRelay': '\uB85C\uCEEC \uB9B4\uB808\uC774',
+        'network.networkActive': '\uB124\uD2B8\uC6CC\uD06C \uD65C\uC131',
+        'network.transactions': '\uD2B8\uB79C\uC7AD\uC158 \uC218',
+        'network.size': '\uD06C\uAE30',
+        'network.usage': '\uC0AC\uC6A9\uB7C9',
+        'network.maxSize': '\uCD5C\uB300 \uD06C\uAE30',
+        'network.minFee': '\uCD5C\uC18C \uC218\uC218\uB8CC (CRN/kvB)',
+        'network.minRelayFee': '\uCD5C\uC18C \uB9B4\uB808\uC774 \uC218\uC218\uB8CC',
+        'network.incrementalFee': '\uC99D\uBD84 \uC218\uC218\uB8CC',
+        'network.unbroadcast': '\uBBF8\uC804\uD30C',
+        'network.noPeers': '\uC5F0\uACB0\uB41C \uD53C\uC5B4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4',
+        'network.error': '\uB124\uD2B8\uC6CC\uD06C \uC815\uBCF4 \uC624\uB958',
+        'th.address': '\uC8FC\uC18C',
+        'th.subversion': '\uC11C\uBE0C\uBC84\uC804',
+        'th.ping': '\uD551 (ms)',
+        'th.sent': '\uC1A1\uC2E0',
+        'th.received': '\uC218\uC2E0',
+
+        // Dice
+        'tab.dice': '\uC8FC\uC0AC\uC704',
+        'dice.nextBlock': '블록 주사위 #{height}',
+        'dice.history': '블록 주사위 기록',
+        'dice.block': '블록',
+        'dice.value': '주사위',
+        'dice.oddEven': '홀수 / 짝수',
+        'dice.time': '시간',
+        'dice.hash': '블록 해시',
+        'dice.odd': '홀수',
+        'dice.even': '짝수',
+        'dice.blockHeight': '블록 높이',
+        'dice.result': '주사위 결과',
+        'dice.error': '주사위 오류',
+        'dice.waiting': '남은 시간',
+        'dice.revealed': '블록 #{height} 결과',
+
+        // Guide
+        'tab.guide': '사용법',
+        'guide.title': '대시보드 사용법',
+        'guide.blocks.title': '블록 탐색기',
+        'guide.blocks.desc': '블록 해시 또는 높이 번호로 블록을 검색할 수 있습니다. 최근 10개 블록이 높이, 해시, 트랜잭션 수, 크기, 시간, 코인베이스 메타데이터와 함께 표시됩니다. 블록을 클릭하면 난이도, 논스, 버전, 머클루트 등 전체 헤더 정보와 포함된 트랜잭션 목록을 확인할 수 있습니다.',
+        'guide.tx.title': '트랜잭션',
+        'guide.tx.desc': 'TxID로 트랜잭션을 검색합니다. txid, 크기, vsize, 가중치, 버전, locktime, 확인 수, 블록 해시 등 상세 정보를 확인할 수 있습니다. 입력과 출력은 별도 테이블로 표시되며 금액은 CRN 단위(소수점 3자리)입니다. 코인베이스 트랜잭션은 OP_RETURN 메타데이터가 디코딩되어 표시됩니다. 하단에는 최근 지갑 거래 내역이 카테고리, 금액, 확인 수, 시간과 함께 표시됩니다.',
+        'guide.wallet.title': '지갑',
+        'guide.wallet.desc': '새로운 CronCoin 수신 주소를 생성하거나, 다른 주소로 CRN을 전송할 수 있습니다 (확인 다이얼로그 포함). 주소 관리와 송금에 특화된 메뉴입니다.',
+        'guide.mining.title': '채굴',
+        'guide.mining.desc': '상단에 채굴 잔액이 표시됩니다 (신뢰 잔액, 미성숙, 미확인 대기 — 채굴 보상은 100블록 확인 후 사용 가능). 그 아래 채굴 정보에서 현재 블록 높이, 난이도, 해시레이트, 블록 보상, 반감기까지 남은 블록 수, 총 발행량을 확인합니다. 블록 수와 주소를 지정하여 새 블록을 생성할 수 있으며, 생성된 블록 해시를 클릭하면 블록 탐색기로 이동합니다.',
+        'guide.richlist.title': '보유량 순위',
+        'guide.richlist.desc': 'CRN 잔액 기준 상위 주소를 순위별로 표시합니다. 스캔된 블록 높이, 총 발행량, 전체 주소 수, 각 주소의 전체 공급량 대비 비율(%)을 확인할 수 있습니다. 잔액은 전체 블록을 스캔하여 UTXO 맵을 구축해 계산합니다.',
+        'guide.network.title': '네트워크',
+        'guide.network.desc': '블록체인 정보(체인 종류, 블록 수, 헤더, 최고 블록 해시, 난이도, 중앙값 시간, 검증 진행률, 총 발행량, 프루닝, 디스크 사용량), 네트워크 정보(버전, 프로토콜, 연결 수), 멤풀 통계(크기, 수수료), 연결된 피어의 주소, 서브버전, 핑, 송수신량을 확인합니다.',
+        'guide.dice.title': '주사위',
+        'guide.dice.desc': '각 블록의 코인베이스 OP_RETURN 메타데이터에서 주사위 값(1~6)을 추출하는 재미 기능입니다. 상단에는 다음 블록 주사위와 카운트다운 타이머(3분 블록 간격)가 표시됩니다. 새 블록이 채굴되면 박수 소리와 함께 5초간 결과가 공개된 후 다시 카운트다운 모드로 돌아갑니다. 히스토리 테이블에서 최근 20개 블록의 주사위 값, 홀짝, 시간, 블록 해시를 확인할 수 있습니다.',
+        'guide.common.title': '공통 기능',
+        'guide.common.desc': '언어 전환: 오른쪽 상단 버튼으로 영문/한글 전환 가능 (브라우저에 저장). 상태바: 하단에 체인 종류, 블록 높이, 연결 수, 멤풀 크기, 총 발행량 표시 (30초마다 자동 갱신). 체인 배지: 헤더에 REGTEST/TESTNET/MAINNET 표시. 탭 유지: 새로고침 시 선택한 탭이 URL에 저장되어 유지됩니다.',
+
+        // Status bar
+        'status.height': '높이',
+        'status.connections': '연결',
+        'status.mempool': '메모리 풀',
+        'status.supply': '발행량',
+        'status.disconnected': '연결 끊김',
+    },
+};
+
+let _currentLang = localStorage.getItem('croncoin-lang') || 'en';
+
+/**
+ * Get translated string by key, with optional interpolation.
+ * t('wallet.confirmSend', { amount: '100.000', address: 'abc...' })
+ */
+function t(key, params) {
+    let str = (I18N[_currentLang] && I18N[_currentLang][key]) || I18N.en[key] || key;
+    if (params) {
+        Object.keys(params).forEach(k => {
+            str = str.replace('{' + k + '}', params[k]);
+        });
+    }
+    return str;
+}
+
+/**
+ * Get current language code.
+ */
+function getLang() {
+    return _currentLang;
+}
+
+/**
+ * Set language and re-render all translatable DOM elements.
+ */
+function setLang(lang) {
+    if (!I18N[lang]) return;
+    _currentLang = lang;
+    localStorage.setItem('croncoin-lang', lang);
+    document.documentElement.lang = lang === 'ko' ? 'ko' : 'en';
+    applyI18n();
+}
+
+/**
+ * Apply translations to all DOM elements with data-i18n attributes.
+ */
+function applyI18n() {
+    // Text content
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.dataset.i18n);
+    });
+    // Placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    // Update language switcher display
+    const langBtn = document.getElementById('lang-btn');
+    if (langBtn) {
+        langBtn.textContent = _currentLang === 'en' ? 'EN | \uD55C' : '\uD55C | EN';
+    }
+}
