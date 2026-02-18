@@ -245,7 +245,7 @@ function escapeHtml(text) {
 let _applauseAudio = null;
 function playApplause() {
     if (!_applauseAudio) {
-        _applauseAudio = new Audio('sounds/applause.wav');
+        _applauseAudio = new Audio('sounds/baksu.wav');
     }
     _applauseAudio.currentTime = 0;
     _applauseAudio.volume = 1.0;
