@@ -5,7 +5,7 @@ const I18N = {
         // Tabs
         'tab.blocks': 'Block Explorer',
         'tab.transactions': 'Transactions',
-        'tab.wallet': 'Create Account',
+        'tab.wallet': 'Coin Wallet',
         'tab.send': 'Send Coin',
         'tab.mining': 'Mining',
         'tab.network': 'Network',
@@ -71,8 +71,8 @@ const I18N = {
 
         // Wallet
         'wallet.balance': 'Available Balance',
-        'wallet.newAddress': 'Create Coin Account',
-        'wallet.generateAddress': 'Create New Account',
+        'wallet.newAddress': 'Coin Wallet',
+        'wallet.generateAddress': 'Create New Wallet',
         'wallet.sendCRN': 'Send CRN',
         'wallet.recipientAddress': 'Recipient Address',
         'wallet.amount': 'Amount (CRN)',
@@ -88,19 +88,29 @@ const I18N = {
         'wallet.addressLabel': 'Address',
         'wallet.publicKey': 'Public Key',
         'wallet.privateKey': 'Private Key',
-        'wallet.confirmGenerate': 'Create Account',
+        'wallet.confirmGenerate': 'Create Wallet',
         'wallet.cancelGenerate': 'Cancel',
-        'wallet.guideContent': '<strong>Before creating a new coin account, please read the following:</strong><ul><li>A new account (address), public key, and <em>private key</em> will be created.</li><li>The <em>private key</em> is the only way to prove ownership of your coins. <strong>Never share it with anyone.</strong></li><li>Copy and store the private key in a safe place immediately after creation.</li><li>If you lose the private key, you cannot recover the coins sent to that account.</li></ul>',
-        'wallet.addressGenerated': 'New account created',
+        'wallet.guideContent': '<strong>Before creating a new coin wallet, please read the following:</strong><ul><li>A new wallet (address), public key, and <em>private key</em> will be created.</li><li>The <em>private key</em> is the only way to prove ownership of your coins. <strong>Never share it with anyone.</strong></li><li>Copy and store the private key in a safe place immediately after creation.</li><li>If you lose the private key, you cannot recover the coins sent to that wallet.</li></ul>',
+        'wallet.addressGenerated': 'New wallet created',
 
-        // Seed Backup
+        // Seed
+        'seed.askHaveSeed': '<strong>A master seed is required to create a coin wallet.</strong><ul><li>The master seed is the root key from which all wallets are derived.</li><li>If you are creating a wallet for the first time, please create a master seed first.</li><li>If you already have a master seed, you can proceed directly to wallet creation.</li></ul>',
+        'seed.createBtn': 'Create Master Seed',
+        'seed.haveBtn': 'I already have one',
         'seed.title': 'HD Seed Backup',
-        'seed.warning': '<strong>Your HD seed is the master key for all coin accounts.</strong><ul><li>All accounts (addresses) are derived from this single seed.</li><li>If you back up this seed, you can <strong>restore all accounts</strong> at any time.</li><li>If this seed is leaked, <strong>all coins in all accounts</strong> can be stolen.</li><li>Store it offline in a secure location. Never save it digitally where others can access.</li></ul>',
-        'seed.showBtn': 'Show Seed',
-        'seed.confirmShow': 'The HD seed is the master key for ALL your accounts. Make sure no one is watching your screen. Continue?',
+        'seed.warning': '<strong>This is your master seed. Back it up now before proceeding.</strong><ul><li>All wallets (addresses) are derived from this single seed.</li><li>If you back up this seed, you can <strong>restore all wallets</strong> at any time.</li><li>If this seed is leaked, <strong>all coins in all wallets</strong> can be stolen.</li><li>Store it offline in a secure location. Never save it digitally where others can access.</li></ul>',
+        'seed.confirmedBtn': 'I have backed up the seed',
         'seed.masterKey': 'Master Private Key (tprv)',
         'seed.walletName': 'Wallet Name',
         'seed.descriptors': 'Descriptors (Full Backup)',
+        'seed.verifyTitle': 'Verify Master Seed',
+        'seed.verifyNotice': '<strong>Please enter your master seed to verify.</strong><ul><li>Enter the master private key (tprv...) you previously backed up.</li><li>This verifies that you have the correct seed before creating a wallet.</li></ul>',
+        'seed.inputLabel': 'Enter your master seed (tprv...)',
+        'seed.verifyBtn': 'Verify',
+        'seed.backBtn': 'Back',
+        'seed.inputEmpty': 'Please enter a master seed',
+        'seed.verifySuccess': 'Seed verified successfully! Proceeding to wallet creation...',
+        'seed.verifyFail': 'The seed does not match. Please check and try again.',
 
         // Send Coin
         'send.title': 'Send CRN',
@@ -246,7 +256,7 @@ const I18N = {
         // Tabs
         'tab.blocks': '\uBE14\uB85D \uD0D0\uC0C9\uAE30',
         'tab.transactions': '\uD2B8\uB79C\uC7AD\uC158',
-        'tab.wallet': '코인계정생성',
+        'tab.wallet': '코인지갑',
         'tab.send': '코인전송',
         'tab.mining': '채굴',
         'tab.network': '\uB124\uD2B8\uC6CC\uD06C',
@@ -312,8 +322,8 @@ const I18N = {
 
         // Wallet
         'wallet.balance': '\uC0AC\uC6A9 \uAC00\uB2A5 \uC794\uC561',
-        'wallet.newAddress': '코인 계정 생성',
-        'wallet.generateAddress': '새 계정 생성',
+        'wallet.newAddress': '코인지갑',
+        'wallet.generateAddress': '새 지갑 생성',
         'wallet.sendCRN': 'CRN \uC804\uC1A1',
         'wallet.recipientAddress': '\uBC1B\uB294 \uC8FC\uC18C',
         'wallet.amount': '\uAE08\uC561 (CRN)',
@@ -329,19 +339,29 @@ const I18N = {
         'wallet.addressLabel': '주소',
         'wallet.publicKey': '공개키',
         'wallet.privateKey': '개인키',
-        'wallet.confirmGenerate': '계정 생성하기',
+        'wallet.confirmGenerate': '지갑 생성하기',
         'wallet.cancelGenerate': '취소',
-        'wallet.guideContent': '<strong>새 코인 계정을 생성하기 전에 다음 사항을 확인하세요:</strong><ul><li>새 계정(주소)과 함께 공개키, <em>개인키</em>가 생성됩니다.</li><li><em>개인키</em>는 코인의 소유권을 증명하는 유일한 수단입니다. <strong>절대 타인에게 공유하지 마세요.</strong></li><li>생성 후 개인키를 즉시 안전한 곳에 복사하여 보관하세요.</li><li>개인키를 분실하면 해당 계정으로 보낸 코인을 복구할 수 없습니다.</li></ul>',
-        'wallet.addressGenerated': '새 계정이 생성되었습니다',
+        'wallet.guideContent': '<strong>새 코인지갑을 생성하기 전에 다음 사항을 확인하세요:</strong><ul><li>새 지갑(주소)과 함께 공개키, <em>개인키</em>가 생성됩니다.</li><li><em>개인키</em>는 코인의 소유권을 증명하는 유일한 수단입니다. <strong>절대 타인에게 공유하지 마세요.</strong></li><li>생성 후 개인키를 즉시 안전한 곳에 복사하여 보관하세요.</li><li>개인키를 분실하면 해당 지갑으로 보낸 코인을 복구할 수 없습니다.</li></ul>',
+        'wallet.addressGenerated': '새 지갑이 생성되었습니다',
 
-        // Seed Backup
+        // Seed
+        'seed.askHaveSeed': '<strong>코인지갑을 생성하려면 마스터 시드가 필요합니다.</strong><ul><li>마스터 시드는 모든 지갑이 파생되는 루트 키입니다.</li><li>처음 지갑을 생성하는 경우, 먼저 마스터 시드를 생성하세요.</li><li>이미 마스터 시드가 있다면 바로 지갑 생성으로 진행할 수 있습니다.</li></ul>',
+        'seed.createBtn': '마스터 시드 생성',
+        'seed.haveBtn': '이미 가지고 있음',
         'seed.title': 'HD 시드 백업',
-        'seed.warning': '<strong>HD 시드는 모든 코인 계정의 마스터 키입니다.</strong><ul><li>모든 계정(주소)은 이 하나의 시드에서 파생됩니다.</li><li>이 시드를 백업하면 언제든지 <strong>모든 계정을 복원</strong>할 수 있습니다.</li><li>이 시드가 유출되면 <strong>모든 계정의 코인</strong>을 도난당할 수 있습니다.</li><li>오프라인의 안전한 장소에 보관하세요. 타인이 접근할 수 있는 곳에 디지털로 저장하지 마세요.</li></ul>',
-        'seed.showBtn': '시드 보기',
-        'seed.confirmShow': 'HD 시드는 모든 계정의 마스터 키입니다. 주변에 아무도 화면을 보고 있지 않은지 확인하세요. 계속하시겠습니까?',
+        'seed.warning': '<strong>마스터 시드입니다. 다음 단계로 넘어가기 전에 반드시 백업하세요.</strong><ul><li>모든 지갑(주소)은 이 하나의 시드에서 파생됩니다.</li><li>이 시드를 백업하면 언제든지 <strong>모든 지갑을 복원</strong>할 수 있습니다.</li><li>이 시드가 유출되면 <strong>모든 지갑의 코인</strong>을 도난당할 수 있습니다.</li><li>오프라인의 안전한 장소에 보관하세요. 타인이 접근할 수 있는 곳에 디지털로 저장하지 마세요.</li></ul>',
+        'seed.confirmedBtn': '시드를 백업했습니다',
         'seed.masterKey': '마스터 개인키 (tprv)',
         'seed.walletName': '지갑 이름',
         'seed.descriptors': '디스크립터 (전체 백업)',
+        'seed.verifyTitle': '마스터 시드 확인',
+        'seed.verifyNotice': '<strong>마스터 시드를 입력하여 확인하세요.</strong><ul><li>이전에 백업한 마스터 개인키(tprv...)를 입력하세요.</li><li>지갑 생성 전에 올바른 시드를 가지고 있는지 확인합니다.</li></ul>',
+        'seed.inputLabel': '마스터 시드 입력 (tprv...)',
+        'seed.verifyBtn': '확인',
+        'seed.backBtn': '뒤로',
+        'seed.inputEmpty': '마스터 시드를 입력하세요',
+        'seed.verifySuccess': '시드가 확인되었습니다! 지갑 생성으로 이동합니다...',
+        'seed.verifyFail': '시드가 일치하지 않습니다. 다시 확인해주세요.',
 
         // Send Coin
         'send.title': 'CRN 전송',

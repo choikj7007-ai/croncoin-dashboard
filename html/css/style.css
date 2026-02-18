@@ -212,7 +212,7 @@ body {
 
 .info-value.mono {
     font-family: var(--mono);
-    font-size: 15px;
+    font-size: 16px;
 }
 
 .info-value.large {
@@ -319,7 +319,7 @@ tr:hover td {
 
 td.mono {
     font-family: var(--mono);
-    font-size: 14px;
+    font-size: 15px;
 }
 
 /* Hash Links */
@@ -535,7 +535,7 @@ td.mono {
 /* Address display */
 .address-display {
     font-family: var(--mono);
-    font-size: 16px;
+    font-size: 18px;
     word-break: break-all;
     color: var(--success);
 }
@@ -610,7 +610,7 @@ td.mono {
     font-weight: 600;
 }
 .key-value {
-    font-size: 15px;
+    font-size: 17px;
     word-break: break-all;
     padding: 8px 10px;
     background: var(--bg-primary);
@@ -618,7 +618,7 @@ td.mono {
 }
 .mono-text {
     font-family: var(--mono);
-    font-size: 14px;
+    font-size: 16px;
     color: var(--text-primary);
 }
 .privkey-text {
@@ -655,8 +655,46 @@ td.mono {
     margin-top: 4px;
 }
 .seed-desc-item {
-    font-size: 12px;
-    line-height: 1.5;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* Seed input & verify */
+.seed-input-field {
+    width: 100%;
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 15px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+.seed-input-field:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+.verify-success {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(46, 204, 113, 0.15);
+    border: 1px solid var(--success);
+    border-radius: 6px;
+    color: var(--success);
+    font-size: 15px;
+    font-weight: 600;
+}
+.verify-fail {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: rgba(231, 76, 60, 0.15);
+    border: 1px solid var(--danger, #e74c3c);
+    border-radius: 6px;
+    color: var(--danger, #e74c3c);
+    font-size: 15px;
+    font-weight: 600;
 }
 
 /* Mining result */

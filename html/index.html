@@ -126,24 +126,49 @@
 
     <!-- 3. Wallet -->
     <div class="tab-content" id="tab-wallet">
-        <div class="card">
-            <div class="card-title" data-i18n="wallet.newAddress">New Address</div>
-            <div id="new-address-guide" class="address-guide">
-                <div class="guide-notice" id="address-guide-content"></div>
-                <div class="address-guide-actions">
-                    <button class="btn btn-primary" id="confirm-generate-btn" data-i18n="wallet.confirmGenerate">Generate Address</button>
-                </div>
+        <!-- Step 1: Ask if user has master seed -->
+        <div class="card" id="wallet-step1">
+            <div class="card-title" data-i18n="wallet.newAddress">Create Coin Account</div>
+            <div class="guide-notice" id="step1-notice"></div>
+            <div class="address-guide-actions">
+                <button class="btn btn-warning" id="seed-create-btn" data-i18n="seed.createBtn">Create Master Seed</button>
+                <button class="btn btn-primary" id="seed-have-btn" data-i18n="seed.haveBtn">I already have one</button>
             </div>
-            <div id="new-address-display"></div>
         </div>
 
-        <div class="card">
+        <!-- Step 2: Seed backup -->
+        <div class="card" id="wallet-step2" style="display:none">
             <div class="card-title" data-i18n="seed.title">HD Seed Backup</div>
             <div class="guide-notice seed-warning" id="seed-warning-content"></div>
+            <div id="seed-display"></div>
             <div class="address-guide-actions">
-                <button class="btn btn-warning" id="seed-backup-btn" data-i18n="seed.showBtn">Show Seed</button>
+                <button class="btn btn-primary" id="seed-confirmed-btn" data-i18n="seed.confirmedBtn">I have backed up the seed</button>
             </div>
-            <div id="seed-display" style="display:none"></div>
+        </div>
+
+        <!-- Step 2-B: Verify existing seed -->
+        <div class="card" id="wallet-step2b" style="display:none">
+            <div class="card-title" data-i18n="seed.verifyTitle">Verify Master Seed</div>
+            <div class="guide-notice" id="seed-verify-notice"></div>
+            <div class="form-group" style="margin-top:16px">
+                <label data-i18n="seed.inputLabel">Enter your master seed (tprv...)</label>
+                <textarea id="seed-input" class="seed-input-field" rows="3" placeholder="tprv..."></textarea>
+            </div>
+            <div id="seed-verify-result"></div>
+            <div class="address-guide-actions">
+                <button class="btn btn-primary" id="seed-verify-btn" data-i18n="seed.verifyBtn">Verify</button>
+                <button class="btn btn-ghost" id="seed-verify-back-btn" data-i18n="seed.backBtn">Back</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Create account -->
+        <div class="card" id="wallet-step3" style="display:none">
+            <div class="card-title" data-i18n="wallet.newAddress">Create Coin Account</div>
+            <div class="guide-notice" id="address-guide-content"></div>
+            <div class="address-guide-actions">
+                <button class="btn btn-primary" id="confirm-generate-btn" data-i18n="wallet.confirmGenerate">Create Account</button>
+            </div>
+            <div id="new-address-display"></div>
         </div>
     </div>
 

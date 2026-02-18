@@ -294,41 +294,90 @@
     }
 
     // ========================================================
-    // 3. WALLET (Create Wallet)
+    // 3. WALLET (Create Account) - 3-step flow
     // ========================================================
 
-    function loadWalletGuide() {
-        document.getElementById('address-guide-content').innerHTML = t('wallet.guideContent');
-        document.getElementById('new-address-guide').style.display = '';
-        document.getElementById('new-address-display').innerHTML = '';
-        // Seed backup section
-        document.getElementById('seed-warning-content').innerHTML = t('seed.warning');
-        document.getElementById('seed-display').style.display = 'none';
-        document.getElementById('seed-backup-btn').style.display = '';
+    function walletShowStep(step) {
+        document.getElementById('wallet-step1').style.display = step === 1 ? '' : 'none';
+        document.getElementById('wallet-step2').style.display = step === 2 ? '' : 'none';
+        document.getElementById('wallet-step2b').style.display = step === '2b' ? '' : 'none';
+        document.getElementById('wallet-step3').style.display = step === 3 ? '' : 'none';
     }
 
-    document.getElementById('seed-backup-btn').addEventListener('click', async () => {
-        if (!confirm(t('seed.confirmShow'))) return;
+    function loadWalletGuide() {
+        document.getElementById('step1-notice').innerHTML = t('seed.askHaveSeed');
+        document.getElementById('new-address-display').innerHTML = '';
+        walletShowStep(1);
+    }
+
+    // "마스터 시드 생성" → Step 2: show seed backup
+    document.getElementById('seed-create-btn').addEventListener('click', async () => {
         try {
             const data = await apiGet('wallet/seed');
+            document.getElementById('seed-warning-content').innerHTML = t('seed.warning');
             let html = `<div class="key-info-group seed-info">`;
             html += `<div class="key-info-row"><span class="key-label">${t('seed.masterKey')}:</span><span class="key-value mono-text privkey-text">${escapeHtml(data.master_key)}</span></div>`;
             html += `<div class="key-info-row"><span class="key-label">${t('seed.walletName')}:</span><span class="key-value">${escapeHtml(data.wallet_name)}</span></div>`;
             html += `<div class="key-info-row"><span class="key-label">${t('seed.descriptors')}:</span>`;
             html += `<div class="seed-descriptors">`;
-            data.descriptors.forEach((d, i) => {
+            data.descriptors.forEach(d => {
                 html += `<div class="key-value mono-text seed-desc-item">${escapeHtml(d)}</div>`;
             });
-            html += `</div></div>`;
-            html += `</div>`;
+            html += `</div></div></div>`;
             document.getElementById('seed-display').innerHTML = html;
-            document.getElementById('seed-display').style.display = '';
-            document.getElementById('seed-backup-btn').style.display = 'none';
+            walletShowStep(2);
         } catch (err) {
             showToast(t('error') + ': ' + err.message, true);
         }
     });
 
+    // "시드를 백업했습니다" → Step 3
+    document.getElementById('seed-confirmed-btn').addEventListener('click', () => {
+        document.getElementById('address-guide-content').innerHTML = t('wallet.guideContent');
+        document.getElementById('new-address-display').innerHTML = '';
+        walletShowStep(3);
+    });
+
+    // "이미 가지고 있음" → Step 2-B: verify seed
+    document.getElementById('seed-have-btn').addEventListener('click', () => {
+        document.getElementById('seed-verify-notice').innerHTML = t('seed.verifyNotice');
+        document.getElementById('seed-input').value = '';
+        document.getElementById('seed-verify-result').innerHTML = '';
+        walletShowStep('2b');
+    });
+
+    // "뒤로" → Step 1
+    document.getElementById('seed-verify-back-btn').addEventListener('click', () => {
+        walletShowStep(1);
+    });
+
+    // "확인" → verify seed against wallet
+    document.getElementById('seed-verify-btn').addEventListener('click', async () => {
+        const input = document.getElementById('seed-input').value.trim();
+        if (!input) {
+            showToast(t('seed.inputEmpty'), true);
+            return;
+        }
+        try {
+            const data = await apiGet('wallet/seed');
+            if (input === data.master_key) {
+                document.getElementById('seed-verify-result').innerHTML =
+                    `<div class="verify-success">${t('seed.verifySuccess')}</div>`;
+                setTimeout(() => {
+                    document.getElementById('address-guide-content').innerHTML = t('wallet.guideContent');
+                    document.getElementById('new-address-display').innerHTML = '';
+                    walletShowStep(3);
+                }, 1500);
+            } else {
+                document.getElementById('seed-verify-result').innerHTML =
+                    `<div class="verify-fail">${t('seed.verifyFail')}</div>`;
+            }
+        } catch (err) {
+            showToast(t('error') + ': ' + err.message, true);
+        }
+    });
+
+    // Step 3: actually create account
     document.getElementById('confirm-generate-btn').addEventListener('click', async () => {
         try {
             const data = await apiGet('wallet/newaddress');
