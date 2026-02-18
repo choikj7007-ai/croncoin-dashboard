@@ -300,8 +300,12 @@
     document.getElementById('new-address-btn').addEventListener('click', async () => {
         try {
             const data = await apiGet('wallet/newaddress');
-            document.getElementById('new-address-display').innerHTML =
-                `<div class="address-display">${escapeHtml(data.address)}</div>`;
+            let html = `<div class="key-info-group">`;
+            html += `<div class="key-info-row"><span class="key-label">${t('wallet.addressLabel')}:</span><span class="key-value address-display">${escapeHtml(data.address)}</span></div>`;
+            if (data.pubkey) html += `<div class="key-info-row"><span class="key-label">${t('wallet.publicKey')}:</span><span class="key-value mono-text">${escapeHtml(data.pubkey)}</span></div>`;
+            if (data.privkey) html += `<div class="key-info-row"><span class="key-label">${t('wallet.privateKey')}:</span><span class="key-value mono-text privkey-text">${escapeHtml(data.privkey)}</span></div>`;
+            html += `</div>`;
+            document.getElementById('new-address-display').innerHTML = html;
             showToast(t('wallet.addressGenerated'));
         } catch (err) {
             showToast(t('error') + ': ' + err.message, true);

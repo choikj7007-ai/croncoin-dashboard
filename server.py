@@ -9,6 +9,154 @@ import base64
 import os
 import sys
 import re
+import hashlib
+import hmac
+
+
+# ---- BIP32 / secp256k1 helpers for private key derivation ----
+
+_SECP256K1_P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
+_SECP256K1_N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+_SECP256K1_Gx = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798
+_SECP256K1_Gy = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8
+_B58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+
+def _ec_point_add(p1, p2):
+    if p1 is None: return p2
+    if p2 is None: return p1
+    P = _SECP256K1_P
+    x1, y1 = p1; x2, y2 = p2
+    if x1 == x2 and y1 != y2: return None
+    if x1 == x2:
+        lam = (3 * x1 * x1) * pow(2 * y1, P - 2, P) % P
+    else:
+        lam = (y2 - y1) * pow(x2 - x1, P - 2, P) % P
+    x3 = (lam * lam - x1 - x2) % P
+    y3 = (lam * (x1 - x3) - y1) % P
+    return (x3, y3)
+
+
+def _ec_point_mul(k, point):
+    result = None; addend = point
+    while k:
+        if k & 1: result = _ec_point_add(result, addend)
+        addend = _ec_point_add(addend, addend)
+        k >>= 1
+    return result
+
+
+def _privkey_to_compressed_pubkey(key_bytes):
+    k = int.from_bytes(key_bytes, "big")
+    x, y = _ec_point_mul(k, (_SECP256K1_Gx, _SECP256K1_Gy))
+    prefix = b"\x02" if y % 2 == 0 else b"\x03"
+    return prefix + x.to_bytes(32, "big")
+
+
+def _b58decode(s):
+    n = 0
+    for c in s:
+        n = n * 58 + _B58_ALPHABET.index(c)
+    byte_len = (n.bit_length() + 7) // 8
+    result = n.to_bytes(byte_len, "big") if byte_len > 0 else b""
+    # count only LEADING '1' characters (each = a 0x00 byte)
+    pad = 0
+    for c in s:
+        if c == "1": pad += 1
+        else: break
+    return bytes(pad) + result
+
+
+def _b58decode_check(s):
+    data = _b58decode(s)
+    payload, cksum = data[:-4], data[-4:]
+    expected = hashlib.sha256(hashlib.sha256(payload).digest()).digest()[:4]
+    if cksum != expected:
+        raise ValueError("Invalid base58 checksum")
+    return payload
+
+
+def _b58encode(data):
+    n = int.from_bytes(data, "big")
+    result = []
+    while n > 0:
+        n, r = divmod(n, 58)
+        result.append(_B58_ALPHABET[r])
+    # leading zero bytes → leading '1's
+    pad = 0
+    for b in data:
+        if b == 0: pad += 1
+        else: break
+    return ("1" * pad) + "".join(reversed(result))
+
+
+def _b58encode_check(payload):
+    cksum = hashlib.sha256(hashlib.sha256(payload).digest()).digest()[:4]
+    return _b58encode(payload + cksum)
+
+
+def _parse_xprv(xprv_b58):
+    """Parse tprv/xprv base58 string → (private_key_32bytes, chain_code_32bytes)"""
+    payload = _b58decode_check(xprv_b58)
+    # Extended key: 4(ver) + 1(depth) + 4(fingerprint) + 4(child#) + 32(chaincode) + 33(key)
+    chain_code = payload[13:45]
+    key = payload[46:78]   # skip 0x00 prefix at payload[45]
+    return key, chain_code
+
+
+def _bip32_derive_child(key, chain_code, index):
+    if index >= 0x80000000:  # hardened
+        data = b"\x00" + key + index.to_bytes(4, "big")
+    else:  # normal – needs compressed pubkey
+        data = _privkey_to_compressed_pubkey(key) + index.to_bytes(4, "big")
+    I = hmac.new(chain_code, data, hashlib.sha512).digest()
+    IL, IR = I[:32], I[32:]
+    child_key = (int.from_bytes(IL, "big") + int.from_bytes(key, "big")) % _SECP256K1_N
+    return child_key.to_bytes(32, "big"), IR
+
+
+def _parse_hdkeypath(path_str):
+    """Parse 'm/84h/1h/0h/0/39' → list of BIP32 child indices."""
+    parts = path_str.strip().split("/")
+    if parts[0] == "m":
+        parts = parts[1:]
+    indices = []
+    for p in parts:
+        if p.endswith("h") or p.endswith("'"):
+            indices.append(int(p[:-1]) + 0x80000000)
+        else:
+            indices.append(int(p))
+    return indices
+
+
+def _privkey_to_wif(key_bytes, testnet=True):
+    prefix = b"\xef" if testnet else b"\x80"
+    return _b58encode_check(prefix + key_bytes + b"\x01")  # compressed
+
+
+def derive_privkey_wif(xprv_b58, hdkeypath):
+    """Derive WIF private key from master tprv and full HD key path."""
+    key, chain_code = _parse_xprv(xprv_b58)
+    for index in _parse_hdkeypath(hdkeypath):
+        key, chain_code = _bip32_derive_child(key, chain_code, index)
+    return _privkey_to_wif(key, testnet=True)
+
+
+def _get_master_tprv():
+    """Get master tprv from wallet's listdescriptors (cached)."""
+    if hasattr(_get_master_tprv, "_cache"):
+        return _get_master_tprv._cache
+    result, err = rpc_call("listdescriptors", [True])
+    if err or not isinstance(result, dict):
+        return None
+    for d in result.get("descriptors", []):
+        desc = d.get("desc", "")
+        # Match wpkh(tprv.../0/*) – receive address descriptor
+        m = re.match(r"^wpkh\((tprv[A-Za-z0-9]+)/", desc)
+        if m and "/0/*)" in desc:
+            _get_master_tprv._cache = m.group(1)
+            return m.group(1)
+    return None
 
 RPC_HOST = os.environ.get("RPC_HOST", "127.0.0.1")
 RPC_PORT = int(os.environ.get("RPC_PORT", "19443"))
@@ -203,10 +351,22 @@ def get_balance(handler, match):
 
 @route("GET", r"/api/wallet/newaddress")
 def get_new_address(handler, match):
-    result, err = rpc_call("getnewaddress")
+    address, err = rpc_call("getnewaddress")
     if err:
         return error_response(handler, err["message"])
-    json_response(handler, {"address": result})
+    resp = {"address": address}
+    info, err2 = rpc_call("getaddressinfo", [address])
+    if not err2 and isinstance(info, dict):
+        resp["pubkey"] = info.get("pubkey", "")
+        hdkeypath = info.get("hdkeypath", "")
+        if hdkeypath:
+            tprv = _get_master_tprv()
+            if tprv:
+                try:
+                    resp["privkey"] = derive_privkey_wif(tprv, hdkeypath)
+                except Exception:
+                    pass
+    json_response(handler, resp)
 
 
 @route("GET", r"/api/wallet/transactions")
