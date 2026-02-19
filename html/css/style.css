@@ -739,7 +739,7 @@ td.mono {
 }
 
 .hd-step-warning {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--error);
     margin-left: 8px;
