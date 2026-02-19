@@ -15,7 +15,7 @@
         <button class="tab active" data-tab="blocks" data-i18n="tab.blocks">Block Explorer</button>
         <button class="tab" data-tab="transactions" data-i18n="tab.transactions">Transactions</button>
         <button class="tab" data-tab="wallet" data-i18n="tab.wallet">Create Wallet</button>
-        <button class="tab" data-tab="send" data-i18n="tab.send">Send Coin</button>
+        <button class="tab" data-tab="send" data-i18n="tab.send">Send CronCoin</button>
         <button class="tab" data-tab="mining" data-i18n="tab.mining">Mining</button>
         <button class="tab" data-tab="richlist" data-i18n="tab.richlist">Rich List</button>
         <button class="tab" data-tab="network" data-i18n="tab.network">Network</button>
@@ -278,6 +278,13 @@
     <div class="tab-content" id="tab-send">
         <div class="card">
             <div class="card-title" data-i18n="send.title">Send CRN</div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1 1 100%">
+                    <label data-i18n="send.privkeyLabel">Private Key (Sender)</label>
+                    <input type="password" id="send-privkey" data-i18n-placeholder="send.privkeyPlaceholder" placeholder="Enter your private key..." autocomplete="off">
+                </div>
+            </div>
+            <div id="send-sender-info" class="info-grid" style="display:none"></div>
             <div class="form-row">
                 <div class="form-group">
                     <label data-i18n="send.recipientAddress">Recipient Address</label>

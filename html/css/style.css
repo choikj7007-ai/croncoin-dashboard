@@ -1026,6 +1026,16 @@ td.mono {
     margin-bottom: 6px;
 }
 
+.dice-countdown.overdue {
+    animation: overdue-pulse 2s ease-in-out infinite;
+    color: var(--accent);
+}
+
+@keyframes overdue-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
 .dice-hero-info {
     display: flex;
     flex-direction: column;

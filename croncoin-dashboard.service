@@ -1,0 +1,17 @@
+[Unit]
+Description=CronCoin Dashboard API Server
+After=croncoind.service
+Requires=croncoind.service
+
+[Service]
+Type=simple
+User=iamckj
+WorkingDirectory=/home/iamckj/croncoin-dashboard
+ExecStartPre=/home/iamckj/croncoin-source/build/bin/croncoin-cli -testnet loadwallet default
+ExecStart=/usr/bin/python3 /home/iamckj/croncoin-dashboard/server.py
+Restart=on-failure
+RestartSec=5
+Environment=HOME=/home/iamckj
+
+[Install]
+WantedBy=multi-user.target

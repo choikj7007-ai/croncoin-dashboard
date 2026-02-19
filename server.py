@@ -136,6 +136,77 @@ def _privkey_to_wif(key_bytes, testnet=True):
     return _b58encode_check(prefix + key_bytes + b"\x01")  # compressed
 
 
+def _get_bech32_hrp():
+    """Get the correct bech32 HRP for the current chain (cached)."""
+    if hasattr(_get_bech32_hrp, "_cache"):
+        return _get_bech32_hrp._cache
+    result, err = rpc_call("getblockchaininfo")
+    if err:
+        return "crnrt"
+    chain = result.get("chain", "")
+    if chain == "test":
+        hrp = "tcrn"
+    elif chain == "main":
+        hrp = "crn"
+    else:
+        hrp = "crnrt"
+    _get_bech32_hrp._cache = hrp
+    return hrp
+
+
+def _privkey_to_address_info(privkey_input):
+    """Accept private key in any format (hex or WIF) → { privkey_bytes, wif, address, pubkey_hex }.
+
+    Supported formats:
+      - 64-char hex string (raw 32-byte private key)
+      - WIF (base58check-encoded, starts with 'c' for testnet or '5'/'K'/'L' for mainnet)
+    """
+    privkey_input = privkey_input.strip()
+
+    # Try hex first: exactly 64 hex characters = 32 bytes
+    if len(privkey_input) == 64:
+        try:
+            key_bytes = bytes.fromhex(privkey_input)
+            wif = _privkey_to_wif(key_bytes, testnet=True)
+            pubkey = _privkey_to_compressed_pubkey(key_bytes)
+            hrp = _get_bech32_hrp()
+            address = _pubkey_to_bech32_address(pubkey, hrp=hrp)
+            return {
+                "privkey_bytes": key_bytes,
+                "wif": wif,
+                "address": address,
+                "pubkey_hex": pubkey.hex(),
+            }
+        except ValueError:
+            pass  # not valid hex, fall through to WIF
+
+    # Try WIF decoding
+    try:
+        payload = _b58decode_check(privkey_input)
+    except (ValueError, Exception):
+        raise ValueError("Invalid private key (not valid hex or WIF format)")
+    if len(payload) < 33:
+        raise ValueError("Invalid private key length")
+    version = payload[0]
+    if version not in (0xef, 0x80):
+        raise ValueError("Invalid private key version")
+    if len(payload) == 34 and payload[33] == 0x01:
+        key_bytes = payload[1:33]
+    elif len(payload) == 33:
+        key_bytes = payload[1:33]
+    else:
+        raise ValueError("Invalid private key format")
+    pubkey = _privkey_to_compressed_pubkey(key_bytes)
+    hrp = _get_bech32_hrp()
+    address = _pubkey_to_bech32_address(pubkey, hrp=hrp)
+    return {
+        "privkey_bytes": key_bytes,
+        "wif": privkey_input,
+        "address": address,
+        "pubkey_hex": pubkey.hex(),
+    }
+
+
 def derive_privkey_wif(xprv_b58, hdkeypath):
     """Derive WIF private key from master tprv and full HD key path."""
     key, chain_code = _parse_xprv(xprv_b58)
@@ -609,12 +680,12 @@ def _full_hd_generate(entropy_bits=128, passphrase="", derivation_path="m/84h/1h
     }
 
 RPC_HOST = os.environ.get("RPC_HOST", "127.0.0.1")
-RPC_PORT = int(os.environ.get("RPC_PORT", "19443"))
+RPC_PORT = int(os.environ.get("RPC_PORT", "19332"))
 RPC_USER = os.environ.get("RPC_USER", "")
 RPC_PASSWORD = os.environ.get("RPC_PASSWORD", "")
 COOKIE_FILE = os.environ.get(
     "RPC_COOKIE",
-    os.path.expanduser("~/.croncoin/regtest/.cookie"),
+    os.path.expanduser("~/.croncoin/testnet3/.cookie"),
 )
 LISTEN_PORT = int(os.environ.get("DASHBOARD_PORT", "5000"))
 WALLET_NAME = os.environ.get("WALLET_NAME", "default")
@@ -1127,6 +1198,119 @@ def send_coins(handler, match):
     if err:
         return error_response(handler, err["message"])
     json_response(handler, {"txid": result})
+
+
+@route("POST", r"/api/wallet/privkey-info")
+def privkey_info(handler, match):
+    """Decode private key (hex or WIF) → derive address → scan UTXO for balance."""
+    body = _read_body(handler)
+    if body is None:
+        return error_response(handler, "Invalid JSON body", 400)
+    privkey = body.get("privkey", "").strip()
+    if not privkey:
+        return error_response(handler, "privkey is required", 400)
+    try:
+        info = _privkey_to_address_info(privkey)
+    except (ValueError, Exception) as e:
+        return error_response(handler, f"Invalid private key: {e}", 400)
+
+    address = info["address"]
+    result, err = rpc_call("scantxoutset", ["start", [f"addr({address})"]])
+    if err:
+        return error_response(handler, err.get("message", "scantxoutset failed"))
+
+    json_response(handler, {
+        "address": address,
+        "pubkey_hex": info["pubkey_hex"],
+        "balance": result.get("total_amount", 0),
+        "utxo_count": len(result.get("unspents", [])),
+    })
+
+
+@route("POST", r"/api/wallet/send-privkey")
+def send_privkey(handler, match):
+    """Send coins using private key (hex or WIF): build raw tx, sign, broadcast."""
+    body = _read_body(handler)
+    if body is None:
+        return error_response(handler, "Invalid JSON body", 400)
+    privkey = body.get("privkey", "").strip()
+    to_address = body.get("address", "").strip()
+    amount = body.get("amount", 0)
+
+    if not privkey:
+        return error_response(handler, "privkey is required", 400)
+    if not to_address:
+        return error_response(handler, "address is required", 400)
+    if not amount or float(amount) <= 0:
+        return error_response(handler, "amount must be positive", 400)
+
+    amount = float(amount)
+    fee = 0.001
+
+    # 1. Decode private key (hex or WIF) → sender address + WIF for signing
+    try:
+        info = _privkey_to_address_info(privkey)
+    except (ValueError, Exception) as e:
+        return error_response(handler, f"Invalid private key: {e}", 400)
+
+    from_address = info["address"]
+    wif_key = info["wif"]
+
+    # 2. Scan UTXOs for sender address
+    scan_result, err = rpc_call("scantxoutset", ["start", [f"addr({from_address})"]])
+    if err:
+        return error_response(handler, err.get("message", "scantxoutset failed"))
+
+    utxos = scan_result.get("unspents", [])
+    if not utxos:
+        return error_response(handler, "No UTXOs found for this address", 400)
+
+    # 3. Coin selection: sort ascending, pick until amount + fee is covered
+    utxos.sort(key=lambda u: u["amount"])
+    selected = []
+    total_in = 0.0
+    needed = amount + fee
+    for utxo in utxos:
+        selected.append(utxo)
+        total_in += utxo["amount"]
+        if total_in >= needed:
+            break
+
+    if total_in < needed:
+        return error_response(handler, f"Insufficient balance. Have {total_in}, need {needed}", 400)
+
+    # 4. Build raw transaction
+    inputs = [{"txid": u["txid"], "vout": u["vout"]} for u in selected]
+    change = round(total_in - amount - fee, 8)
+    outputs = {to_address: round(amount, 8)}
+    if change > 0.00001:  # dust threshold
+        outputs[from_address] = change
+
+    raw_tx, err = rpc_call("createrawtransaction", [inputs, outputs])
+    if err:
+        return error_response(handler, f"createrawtransaction failed: {err.get('message', '')}")
+
+    # 5. Sign with WIF key (internally converted from hex if needed)
+    signed, err = rpc_call("signrawtransactionwithkey", [raw_tx, [wif_key]])
+    if err:
+        return error_response(handler, f"signrawtransactionwithkey failed: {err.get('message', '')}")
+    if not signed.get("complete"):
+        errors = signed.get("errors", [])
+        msg = errors[0].get("error", "Signing incomplete") if errors else "Signing incomplete"
+        return error_response(handler, f"Transaction signing failed: {msg}")
+
+    # 6. Broadcast
+    txid, err = rpc_call("sendrawtransaction", [signed["hex"]])
+    if err:
+        return error_response(handler, f"sendrawtransaction failed: {err.get('message', '')}")
+
+    json_response(handler, {
+        "txid": txid,
+        "from": from_address,
+        "to": to_address,
+        "amount": amount,
+        "fee": fee,
+    })
 
 
 def _read_body(handler):

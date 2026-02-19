@@ -1,7 +1,7 @@
 #!/bin/bash
 # CronCoin auto-mining: generates 1 block every 3 minutes
 CLI="/home/iamckj/croncoin-source/build/bin/croncoin-cli"
-OPTS="-regtest -rpcport=19443 -rpcwallet=default"
+OPTS="-testnet -rpcport=19332 -rpcwallet=default"
 LOG="/home/iamckj/croncoin-dashboard/mine-cron.log"
 
 ADDR=$($CLI $OPTS getnewaddress 2>/dev/null)

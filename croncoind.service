@@ -1,0 +1,17 @@
+[Unit]
+Description=CronCoin Daemon (testnet)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=iamckj
+ExecStart=/home/iamckj/croncoin-source/build/bin/croncoind -testnet -daemon -txindex -fallbackfee=0.01 -rpcbind=127.0.0.1 -rpcallowip=127.0.0.1
+ExecStop=/home/iamckj/croncoin-source/build/bin/croncoin-cli -testnet stop
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=30
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

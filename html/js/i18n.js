@@ -6,7 +6,7 @@ const I18N = {
         'tab.blocks': 'Block Explorer',
         'tab.transactions': 'Transactions',
         'tab.wallet': 'Coin Wallet',
-        'tab.send': 'Send Coin',
+        'tab.send': 'Send CronCoin',
         'tab.mining': 'Mining',
         'tab.network': 'Network',
 
@@ -175,7 +175,18 @@ const I18N = {
         'bal.address': 'Address',
 
         // Send Coin
-        'send.title': 'Send CRN',
+        'send.title': 'Send CronCoin',
+        'send.privkeyLabel': 'Private Key (Sender)',
+        'send.privkeyPlaceholder': 'Enter your private key...',
+        'send.senderAddress': 'Sender Address',
+        'send.senderBalance': 'Sender Balance',
+        'send.invalidPrivkey': 'Invalid private key',
+        'send.privkeyRequired': 'Private key is required to send coins',
+        'send.from': 'From',
+        'send.to': 'To',
+        'send.fee': 'Fee',
+        'send.sending': 'Sending...',
+        'send.insufficientBalance': 'Insufficient balance',
         'send.recipientAddress': 'Recipient Address',
         'send.amount': 'Amount (CRN)',
         'send.addressPlaceholder': 'croncoin address...',
@@ -224,6 +235,7 @@ const I18N = {
         'richlist.loading': 'Scanning blocks...',
         'richlist.error': 'Rich list error',
         'richlist.regtestNotice': 'This is a regtest (local test) network. All coins shown here were generated via test mining and have no real value.',
+        'notice.testnet': 'This is a TESTNET. This is NOT the mainnet. All coins on this network are for testing purposes only and have no real value.',
 
         // Chain badge
         'chain.regtest': 'REGTEST',
@@ -284,9 +296,18 @@ const I18N = {
         'dice.result': 'Dice Result',
         'dice.error': 'Dice error',
         'dice.waiting': 'Remaining',
+        'dice.overdue': 'Elapsed',
         'dice.revealed': 'Block #{height} Result',
 
-        // Guide
+        // Guide - How-to
+        'guide.howto.wallet.title': 'How to Create a Wallet',
+        'guide.howto.wallet.desc': '<ol><li>Click the <strong>"Coin Wallet"</strong> tab at the top.</li><li>Click the <strong>"Generate New Wallet"</strong> button.</li><li>5 steps will appear in order:<ul><li><strong>Step 1 - Mnemonic (12 words)</strong>: Write these words on paper and store them safely. This is the only way to recover your wallet.</li><li><strong>Step 2 - Master Key</strong>: xprv (extended private key) and xpub (extended public key) are generated together.</li><li><strong>Step 3 - Private Key</strong>: This is used to send coins. <em>Never share it with anyone.</em></li><li><strong>Step 4 - Public Key</strong>: Store it safely.</li><li><strong>Step 5 - Address</strong>: Share this address to receive coins.</li></ul></li><li>Click <strong>"Copy"</strong> or <strong>"Save as File"</strong> to back up your wallet info.</li><li>To recover a previously created wallet, click <strong>"Recover from Mnemonic"</strong> and enter your 12 words.</li></ol>',
+        'guide.howto.balance.title': 'How to Check Coin Balance',
+        'guide.howto.balance.desc': '<ol><li>Click the <strong>"Coin Wallet"</strong> tab at the top.</li><li>Click the <strong>"Check Balance by Address"</strong> button.</li><li>Enter the wallet address (starts with <code>tcrn1</code> on testnet) and click <strong>"Check Balance"</strong>.</li><li>The balance (CRN) and UTXO count will be displayed.</li></ol><p><strong>Tip:</strong> You can also check balances for all addresses derived from a master key at once using <strong>"Check Balance by xpub"</strong>.</p>',
+        'guide.howto.send.title': 'How to Send CronCoin',
+        'guide.howto.send.desc': '<ol><li>Click the <strong>"Send CronCoin"</strong> tab at the top.</li><li>Enter your <strong>private key</strong> in the first field. The sender address and balance will appear automatically.</li><li>Enter the <strong>recipient address</strong> and the <strong>amount</strong> to send.</li><li>Click <strong>"Send"</strong> and confirm the dialog.</li><li>On success, the transaction details (from, to, amount, fee, TxID) will be displayed.</li></ol><p><strong>Notes:</strong></p><ul><li>A fixed fee of <strong>0.001 CRN</strong> is deducted automatically.</li><li>The private key is cleared from the form after a successful send for security.</li><li>You can find your private key in the <strong>"Coin Wallet"</strong> tab after generating or recovering a wallet (Step 3).</li></ul>',
+
+        // Guide - Menu descriptions
         'tab.guide': 'Guide',
         'guide.title': 'Dashboard Guide',
         'guide.blocks.title': 'Block Explorer',
@@ -319,7 +340,7 @@ const I18N = {
         'tab.blocks': '\uBE14\uB85D \uD0D0\uC0C9\uAE30',
         'tab.transactions': '\uD2B8\uB79C\uC7AD\uC158',
         'tab.wallet': '코인지갑',
-        'tab.send': '코인전송',
+        'tab.send': '크론코인 전송',
         'tab.mining': '채굴',
         'tab.network': '\uB124\uD2B8\uC6CC\uD06C',
 
@@ -488,7 +509,18 @@ const I18N = {
         'bal.address': '주소',
 
         // Send Coin
-        'send.title': 'CRN 전송',
+        'send.title': '크론코인 전송',
+        'send.privkeyLabel': '개인키 (보내는 사람)',
+        'send.privkeyPlaceholder': '개인키를 입력하세요...',
+        'send.senderAddress': '보내는 주소',
+        'send.senderBalance': '보유 잔액',
+        'send.invalidPrivkey': '유효하지 않은 개인키',
+        'send.privkeyRequired': '코인 전송을 위해 개인키가 필요합니다',
+        'send.from': '보내는 주소',
+        'send.to': '받는 주소',
+        'send.fee': '수수료',
+        'send.sending': '전송 중...',
+        'send.insufficientBalance': '잔액이 부족합니다',
         'send.recipientAddress': '받는 주소',
         'send.amount': '금액 (CRN)',
         'send.addressPlaceholder': 'croncoin 주소...',
@@ -537,6 +569,7 @@ const I18N = {
         'richlist.loading': '\uBE14\uB85D \uC2A4\uCE94 \uC911...',
         'richlist.error': '\uBCF4\uC720\uB7C9 \uC21C\uC704 \uC624\uB958',
         'richlist.regtestNotice': '\uD604\uC7AC regtest (\uB85C\uCEEC \uD14C\uC2A4\uD2B8) \uB124\uD2B8\uC6CC\uD06C\uC5D0 \uC5F0\uACB0\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4. \uD45C\uC2DC\uB41C \uBAA8\uB4E0 \uCF54\uC778\uC740 \uD14C\uC2A4\uD2B8 \uCC44\uAD74\uC744 \uD1B5\uD574 \uC0DD\uC131\uB41C \uAC83\uC73C\uB85C \uC2E4\uC81C \uAC00\uCE58\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.',
+        'notice.testnet': '현재 테스트넷(TESTNET)에 연결되어 있습니다. 메인넷이 아닙니다. 이 네트워크의 모든 코인은 테스트 목적이며 실제 가치가 없습니다.',
 
         // Chain badge
         'chain.regtest': 'REGTEST',
@@ -597,9 +630,18 @@ const I18N = {
         'dice.result': '주사위 결과',
         'dice.error': '주사위 오류',
         'dice.waiting': '남은 시간',
+        'dice.overdue': '경과 시간',
         'dice.revealed': '블록 #{height} 결과',
 
-        // Guide
+        // Guide - How-to
+        'guide.howto.wallet.title': '코인지갑 만드는 방법',
+        'guide.howto.wallet.desc': '<ol><li>상단의 <strong>"코인지갑"</strong> 탭을 클릭합니다.</li><li><strong>"새 지갑 생성하기"</strong> 버튼을 클릭합니다.</li><li>5단계가 순서대로 표시됩니다:<ul><li><strong>1단계 - 니모닉 (12단어)</strong>: 이 단어들을 종이에 적어 안전한 곳에 보관하세요. 지갑을 복구할 수 있는 유일한 방법입니다.</li><li><strong>2단계 - 마스터키</strong>: xprv(확장 개인키)와 xpub(확장 공개키)가 함께 생성됩니다.</li><li><strong>3단계 - 개인키</strong>: 코인을 전송할 때 사용합니다. <em>절대 타인에게 공유하지 마세요.</em></li><li><strong>4단계 - 공개키</strong>: 안전하게 보관하세요.</li><li><strong>5단계 - 주소</strong>: 코인을 받을 때 이 주소를 상대방에게 알려주세요.</li></ul></li><li><strong>"복사하기"</strong> 또는 <strong>"파일로 저장"</strong>을 클릭하여 지갑 정보를 백업하세요.</li><li>이전에 생성한 지갑을 복구하려면 <strong>"니모닉(시드)으로 지갑 조회"</strong>를 클릭하고 12단어를 입력하세요.</li></ol>',
+        'guide.howto.balance.title': '코인 잔액 조회하는 방법',
+        'guide.howto.balance.desc': '<ol><li>상단의 <strong>"코인지갑"</strong> 탭을 클릭합니다.</li><li><strong>"지갑 주소로 코인조회"</strong> 버튼을 클릭합니다.</li><li>지갑 주소(테스트넷에서는 <code>tcrn1</code>으로 시작)를 입력하고 <strong>"코인조회"</strong>를 클릭합니다.</li><li>보유 코인(CRN)과 UTXO 개수가 표시됩니다.</li></ol><p><strong>참고:</strong> 마스터키(xpub)에서 파생된 모든 주소의 잔액을 한번에 조회하려면 <strong>"마스터키(xpub)로 코인조회"</strong>를 사용하세요.</p>',
+        'guide.howto.send.title': '크론코인 전송하는 방법',
+        'guide.howto.send.desc': '<ol><li>상단의 <strong>"크론코인 전송"</strong> 탭을 클릭합니다.</li><li>첫 번째 필드에 <strong>개인키</strong>를 입력합니다. 보내는 주소와 보유 잔액이 자동으로 표시됩니다.</li><li><strong>받는 주소</strong>와 전송할 <strong>금액</strong>을 입력합니다.</li><li><strong>"전송"</strong> 버튼을 클릭하고 확인 대화상자에서 승인합니다.</li><li>전송 성공 시 상세 정보(보내는 주소, 받는 주소, 금액, 수수료, TxID)가 표시됩니다.</li></ol><p><strong>참고 사항:</strong></p><ul><li>수수료 <strong>0.001 CRN</strong>이 자동으로 차감됩니다.</li><li>보안을 위해 전송 성공 후 개인키 입력란은 자동으로 지워집니다.</li><li>개인키는 <strong>"코인지갑"</strong> 탭에서 지갑을 생성하거나 복구한 후 3단계에서 확인할 수 있습니다.</li></ul>',
+
+        // Guide - Menu descriptions
         'tab.guide': '사용법',
         'guide.title': '대시보드 사용법',
         'guide.blocks.title': '블록 탐색기',

@@ -849,12 +849,43 @@
     });
 
     // ========================================================
-    // 3-2. SEND COIN
+    // 3-2. SEND COIN (WIF-based)
     // ========================================================
 
+    let _privkeyDebounceTimer = null;
+
+    document.getElementById('send-privkey').addEventListener('input', () => {
+        if (_privkeyDebounceTimer) clearTimeout(_privkeyDebounceTimer);
+        _privkeyDebounceTimer = setTimeout(async () => {
+            const privkey = document.getElementById('send-privkey').value.trim();
+            const infoEl = document.getElementById('send-sender-info');
+            if (!privkey || privkey.length < 50) {
+                infoEl.style.display = 'none';
+                return;
+            }
+            try {
+                const data = await apiPost('wallet/privkey-info', { privkey });
+                infoEl.style.display = '';
+                renderInfoGrid('send-sender-info', [
+                    { label: t('send.senderAddress'), value: data.address, cls: 'mono' },
+                    { label: t('send.senderBalance'), value: formatCRN(data.balance) },
+                ]);
+            } catch (err) {
+                infoEl.style.display = '';
+                infoEl.innerHTML = `<div class="info-item"><span class="info-label">${escapeHtml(t('send.invalidPrivkey'))}</span><span class="info-value" style="color:var(--error)">${escapeHtml(err.message)}</span></div>`;
+            }
+        }, 500);
+    });
+
     document.getElementById('send-btn').addEventListener('click', async () => {
+        const privkey = document.getElementById('send-privkey').value.trim();
         const address = document.getElementById('send-address').value.trim();
         const amount = parseFloat(document.getElementById('send-amount').value);
+
+        if (!privkey) {
+            showToast(t('send.privkeyRequired'), true);
+            return;
+        }
         if (!address || !amount || amount <= 0) {
             showToast(t('send.invalidInput'), true);
             return;
@@ -862,16 +893,32 @@
         const msg = t('send.confirmSend', { amount: formatAmount(amount), address: address });
         if (!confirm(msg)) return;
 
+        const btn = document.getElementById('send-btn');
+        btn.disabled = true;
+        btn.textContent = t('send.sending');
+
         try {
-            const data = await apiPost('wallet/send', { address, amount });
+            const data = await apiPost('wallet/send-privkey', { privkey, address, amount });
             document.getElementById('send-result').innerHTML =
-                `<div class="address-display">${escapeHtml(t('send.sentTxid'))} <span class="hash-link" id="sent-txid-link">${escapeHtml(data.txid)}</span></div>`;
+                `<div class="address-display">
+                    <div>${escapeHtml(t('send.from'))}: <span class="mono">${escapeHtml(data.from)}</span></div>
+                    <div>${escapeHtml(t('send.to'))}: <span class="mono">${escapeHtml(data.to)}</span></div>
+                    <div>${escapeHtml(t('send.amount'))}: ${formatAmount(data.amount)} CRN</div>
+                    <div>${escapeHtml(t('send.fee'))}: ${formatAmount(data.fee)} CRN</div>
+                    <div>${escapeHtml(t('send.sentTxid'))} <span class="hash-link" id="sent-txid-link">${escapeHtml(data.txid)}</span></div>
+                </div>`;
             document.getElementById('sent-txid-link').addEventListener('click', () => viewTransaction(data.txid));
+            // Clear form (security: clear private key)
+            document.getElementById('send-privkey').value = '';
             document.getElementById('send-address').value = '';
             document.getElementById('send-amount').value = '';
+            document.getElementById('send-sender-info').style.display = 'none';
             showToast(t('send.sendSuccess'));
         } catch (err) {
             showToast(t('send.sendFailed') + ': ' + err.message, true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = t('send.sendBtn');
         }
     });
 
@@ -1124,10 +1171,18 @@
             const now = Math.floor(Date.now() / 1000);
             const nextBlockAt = lastBlockTime + 180;
             let remaining = nextBlockAt - now;
-            if (remaining < 0) remaining = 0;
-            const min = Math.floor(remaining / 60);
-            const sec = remaining % 60;
-            cdEl.innerHTML = `<div class="countdown-label">${t('dice.waiting')}</div>${min}:${sec < 10 ? '0' : ''}${sec}`;
+            if (remaining > 0) {
+                const min = Math.floor(remaining / 60);
+                const sec = remaining % 60;
+                cdEl.className = 'dice-countdown';
+                cdEl.innerHTML = `<div class="countdown-label">${t('dice.waiting')}</div>${min}:${sec < 10 ? '0' : ''}${sec}`;
+            } else {
+                const elapsed = -remaining;
+                const min = Math.floor(elapsed / 60);
+                const sec = elapsed % 60;
+                cdEl.className = 'dice-countdown overdue';
+                cdEl.innerHTML = `<div class="countdown-label">${t('dice.overdue')}</div>+${min}:${sec < 10 ? '0' : ''}${sec}`;
+            }
         }
         updateCountdown();
         _diceCountdownTimer = setInterval(updateCountdown, 1000);
@@ -1213,16 +1268,32 @@
         }
     }
 
+    let _diceAutoMining = false;
+
     function startDicePolling() {
         if (_dicePollingTimer) clearInterval(_dicePollingTimer);
         _dicePollingTimer = setInterval(async () => {
-            if (_diceRevealing) return;
+            if (_diceRevealing || _diceAutoMining) return;
             try {
                 const info = await apiGet('blockchain');
                 if (info.blocks > _diceKnownHeight) {
                     const newBlock = await apiGet('blockheight/' + info.blocks);
                     _diceKnownHeight = info.blocks;
                     diceShowResult(newBlock);
+                } else if (_currentChain !== 'main') {
+                    // Auto-mine on non-mainnet when block interval (180s) exceeded
+                    const latestBlock = await apiGet('blockheight/' + info.blocks);
+                    const elapsed = Math.floor(Date.now() / 1000) - latestBlock.time;
+                    if (elapsed >= 180) {
+                        _diceAutoMining = true;
+                        try {
+                            await apiPost('mine', { nblocks: 1 });
+                        } catch (e) {
+                            // ignore mining errors
+                        } finally {
+                            _diceAutoMining = false;
+                        }
+                    }
                 }
             } catch (e) {
                 // ignore polling errors
@@ -1256,6 +1327,9 @@
     // ========================================================
 
     const _guideSections = [
+        { titleKey: 'guide.howto.wallet.title', descKey: 'guide.howto.wallet.desc', icon: '💰', html: true },
+        { titleKey: 'guide.howto.balance.title', descKey: 'guide.howto.balance.desc', icon: '🔎', html: true },
+        { titleKey: 'guide.howto.send.title', descKey: 'guide.howto.send.desc', icon: '📤', html: true },
         { titleKey: 'guide.blocks.title', descKey: 'guide.blocks.desc', icon: '🔍' },
         { titleKey: 'guide.tx.title', descKey: 'guide.tx.desc', icon: '📄' },
         { titleKey: 'guide.wallet.title', descKey: 'guide.wallet.desc', icon: '💰' },
@@ -1268,12 +1342,13 @@
 
     function loadGuide() {
         const el = document.getElementById('guide-content');
-        el.innerHTML = _guideSections.map(sec =>
-            `<div class="guide-section">
+        el.innerHTML = _guideSections.map(sec => {
+            const desc = sec.html ? t(sec.descKey) : escapeHtml(t(sec.descKey));
+            return `<div class="guide-section">
                 <div class="guide-section-title"><span class="guide-icon">${sec.icon}</span> ${escapeHtml(t(sec.titleKey))}</div>
-                <div class="guide-section-desc">${escapeHtml(t(sec.descKey))}</div>
-            </div>`
-        ).join('');
+                <div class="guide-section-desc">${desc}</div>
+            </div>`;
+        }).join('');
     }
 
     // ========================================================
@@ -1304,7 +1379,12 @@
         const el = document.getElementById('global-notice');
         if (chain === 'regtest') {
             el.style.display = 'block';
+            el.className = 'notice notice-warning';
             el.textContent = t('richlist.regtestNotice');
+        } else if (chain === 'test' || chain === 'testnet') {
+            el.style.display = 'block';
+            el.className = 'notice notice-warning';
+            el.textContent = t('notice.testnet');
         } else {
             el.style.display = 'none';
         }
