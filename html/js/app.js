@@ -33,7 +33,7 @@
     });
 
     // Logo click → go to blocks tab (home)
-    document.querySelector('.logo').addEventListener('click', e => { e.preventDefault(); switchTab('blocks'); });
+    document.querySelector('.logo').addEventListener('click', e => { e.preventDefault(); switchTab('about'); });
 
     function onTabActivated(tabName) {
         if (tabName !== 'dice') stopDicePolling();
@@ -1358,7 +1358,7 @@
     applyI18n();
 
     // Restore tab from URL hash, default to 'blocks'
-    const savedTab = location.hash.replace('#', '') || 'blocks';
+    const savedTab = location.hash.replace('#', '') || 'about';
     switchTab(savedTab);
     updateStatusBar();
 

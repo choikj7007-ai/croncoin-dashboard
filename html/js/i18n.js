@@ -3,6 +3,7 @@
 const I18N = {
     en: {
         // Tabs
+        'tab.about': 'CronCoin',
         'tab.blocks': 'Block Explorer',
         'tab.transactions': 'Transactions',
         'tab.wallet': 'Coin Wallet',
@@ -340,6 +341,7 @@ const I18N = {
 
     ko: {
         // Tabs
+        'tab.about': '크론코인',
         'tab.blocks': '\uBE14\uB85D \uD0D0\uC0C9\uAE30',
         'tab.transactions': '\uD2B8\uB79C\uC7AD\uC158',
         'tab.wallet': '코인지갑',
