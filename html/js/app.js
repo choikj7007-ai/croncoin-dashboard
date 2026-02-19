@@ -38,9 +38,8 @@
             case 'blocks': loadRecentBlocks(); break;
             case 'transactions': loadRecentTxList(); break;
             case 'wallet': loadWalletGuide(); break;
-            case 'mining': loadMiningInfo(); break;
             case 'richlist': loadRichList(); break;
-            case 'network': loadNetworkTab(); break;
+            case 'network': loadMiningInfo(); loadNetworkTab(); break;
             case 'dice': loadDice(); break;
             case 'guide': loadGuide(); break;
         }
@@ -1007,7 +1006,7 @@
             renderInfoGrid('richlist-summary', [
                 { label: t('richlist.scannedHeight'), value: data.height, cls: 'large' },
                 { label: t('richlist.chain'), value: (_currentChain || 'regtest').toUpperCase() },
-                { label: t('richlist.totalSupply'), value: formatNumber(data.total_supply) + ' CRN' },
+                { label: t('richlist.totalSupply'), value: Math.round(data.total_supply).toLocaleString('en-US') + ' CRN' },
                 { label: t('richlist.totalAddresses'), value: data.total_addresses },
             ]);
 
@@ -1015,11 +1014,11 @@
             const supply = data.total_supply || 1;
             data.addresses.forEach((entry, i) => {
                 const tr = document.createElement('tr');
-                const pct = (entry.balance / supply * 100).toFixed(2);
+                const pct = Math.round(entry.balance / supply * 100);
                 tr.innerHTML = `
                     <td>${i + 1}</td>
                     <td class="mono">${escapeHtml(entry.address)}</td>
-                    <td class="mono">${formatNumber(entry.balance)}</td>
+                    <td class="mono">${Math.round(entry.balance).toLocaleString('en-US')}</td>
                     <td>${pct}%</td>`;
                 tbody.appendChild(tr);
             });

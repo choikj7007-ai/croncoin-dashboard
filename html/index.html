@@ -16,7 +16,6 @@
         <button class="tab" data-tab="transactions" data-i18n="tab.transactions">Transactions</button>
         <button class="tab" data-tab="wallet" data-i18n="tab.wallet">Create Wallet</button>
         <button class="tab" data-tab="send" data-i18n="tab.send">Send CronCoin</button>
-        <button class="tab" data-tab="mining" data-i18n="tab.mining">Mining</button>
         <button class="tab" data-tab="richlist" data-i18n="tab.richlist">Rich List</button>
         <button class="tab" data-tab="network" data-i18n="tab.network">Network</button>
         <button class="tab" data-tab="dice" data-i18n="tab.dice">Dice</button>
@@ -300,23 +299,6 @@
         </div>
     </div>
 
-    <!-- 4. Mining -->
-    <div class="tab-content" id="tab-mining">
-        <div class="card">
-            <div class="balance-display">
-                <div class="balance-label" data-i18n="mining.miningBalance">Mining Balance</div>
-                <div class="balance-amount" id="mining-balance">—</div>
-            </div>
-            <div class="info-grid" id="mining-balance-grid"></div>
-        </div>
-
-        <div class="card">
-            <div class="card-title" data-i18n="mining.info">Mining Info</div>
-            <div class="info-grid" id="mining-info-grid"></div>
-        </div>
-
-    </div>
-
     <!-- 5. Rich List -->
     <div class="tab-content" id="tab-richlist">
         <div class="card">
@@ -340,6 +322,19 @@
 
     <!-- 6. Network Status -->
     <div class="tab-content" id="tab-network">
+        <div class="card">
+            <div class="balance-display">
+                <div class="balance-label" data-i18n="mining.miningBalance">Mining Balance</div>
+                <div class="balance-amount" id="mining-balance">—</div>
+            </div>
+            <div class="info-grid" id="mining-balance-grid"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title" data-i18n="mining.info">Mining Info</div>
+            <div class="info-grid" id="mining-info-grid"></div>
+        </div>
+
         <div class="card">
             <div class="card-title" data-i18n="network.blockchain">Blockchain</div>
             <div class="info-grid" id="chain-info-grid"></div>

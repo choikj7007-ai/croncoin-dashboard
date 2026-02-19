@@ -20,17 +20,27 @@ is_running() {
 }
 
 do_stop() {
+    local stopped=false
+    # Kill process from PID file
     if is_running; then
         MAIN_PID=$(cat "$PID_FILE")
-        # Stop child cpuminer processes first
         pkill -P "$MAIN_PID" 2>/dev/null
         kill "$MAIN_PID" 2>/dev/null
         wait "$MAIN_PID" 2>/dev/null
-        rm -f "$PID_FILE"
+        stopped=true
+    fi
+    rm -f "$PID_FILE"
+    # Also kill any orphan miner processes
+    pkill -f "$MINERD" 2>/dev/null
+    pkill -f "_mining_loop" 2>/dev/null
+    sleep 1
+    # Force kill if still alive
+    pkill -9 -f "$MINERD" 2>/dev/null
+    pkill -9 -f "_mining_loop" 2>/dev/null
+    if $stopped; then
         echo "Miner stopped."
     else
         echo "Miner is not running."
-        rm -f "$PID_FILE" 2>/dev/null
     fi
 }
 
