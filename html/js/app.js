@@ -314,6 +314,18 @@
         });
         const qrEl = document.getElementById('hd-address-qr');
         if (qrEl) qrEl.innerHTML = '';
+        // Hide recovery input cards
+        document.getElementById('hd-mnemonic-input-card').style.display = 'none';
+        document.getElementById('hd-xpub-input-card').style.display = 'none';
+        document.getElementById('hd-mnemonic-input').value = '';
+        document.getElementById('hd-xpub-input').value = '';
+        // Hide balance input cards and results
+        document.getElementById('hd-xpub-balance-card').style.display = 'none';
+        document.getElementById('hd-address-balance-card').style.display = 'none';
+        document.getElementById('hd-xpub-balance-result').style.display = 'none';
+        document.getElementById('hd-address-balance-result').style.display = 'none';
+        document.getElementById('hd-xpub-balance-input').value = '';
+        document.getElementById('hd-address-balance-input').value = '';
     }
 
     function renderKeyPair(xprv, xpub) {
@@ -484,6 +496,356 @@
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         showToast(t('hd.saved'));
+    });
+
+    // ========================================================
+    // 3-1. RECOVER FROM MNEMONIC / XPUB
+    // ========================================================
+
+    // Toggle input cards
+    document.getElementById('hd-recover-mnemonic-btn').addEventListener('click', () => {
+        const card = document.getElementById('hd-mnemonic-input-card');
+        const wasHidden = card.style.display === 'none';
+        hideAllInputCards();
+        hideGeneratedResults();
+        card.style.display = wasHidden ? '' : 'none';
+    });
+
+    document.getElementById('hd-recover-xpub-btn').addEventListener('click', () => {
+        const card = document.getElementById('hd-xpub-input-card');
+        const wasHidden = card.style.display === 'none';
+        hideAllInputCards();
+        hideGeneratedResults();
+        card.style.display = wasHidden ? '' : 'none';
+    });
+
+    document.getElementById('hd-mnemonic-input-close').addEventListener('click', () => {
+        document.getElementById('hd-mnemonic-input-card').style.display = 'none';
+    });
+
+    document.getElementById('hd-xpub-input-close').addEventListener('click', () => {
+        document.getElementById('hd-xpub-input-card').style.display = 'none';
+    });
+
+    // Recover from mnemonic
+    document.getElementById('hd-mnemonic-recover-btn').addEventListener('click', async () => {
+        const mnemonic = document.getElementById('hd-mnemonic-input').value.trim();
+        if (!mnemonic) {
+            showToast(t('hd.invalidMnemonic'), true);
+            return;
+        }
+
+        const btn = document.getElementById('hd-mnemonic-recover-btn');
+        btn.disabled = true;
+        btn.textContent = t('hd.recovering');
+
+        try {
+            const data = await apiPost('wallet/recover-mnemonic', { mnemonic });
+
+            // Hide input cards
+            document.getElementById('hd-mnemonic-input-card').style.display = 'none';
+
+            // Show the flow container — same as generate, all 5 steps
+            document.getElementById('hd-flow-container').style.display = 'block';
+
+            const steps = [
+                { el: 'hd-step-mnemonic', content: () => {
+                    const words = data.mnemonic.split(' ');
+                    let html = '<div class="mnemonic-grid">';
+                    words.forEach((w, i) => {
+                        html += `<div class="mnemonic-word"><span class="word-num">${i + 1}</span><span class="word-text">${escapeHtml(w)}</span></div>`;
+                    });
+                    html += '</div>';
+                    document.getElementById('hd-mnemonic').innerHTML = html;
+                }},
+                { el: 'hd-step-master', content: () => {
+                    document.getElementById('hd-master-keys').innerHTML = renderKeyPair(data.master_xprv, data.master_xpub);
+                }},
+                { el: 'hd-step-privkey', content: () => {
+                    document.getElementById('hd-privkey').textContent = data.private_key_wif;
+                }},
+                { el: 'hd-step-pubkey', content: () => {
+                    document.getElementById('hd-pubkey').textContent = data.public_key_hex;
+                }},
+                { el: 'hd-step-address', content: () => {
+                    document.getElementById('hd-address').textContent = data.address;
+                    const qrEl = document.getElementById('hd-address-qr');
+                    qrEl.innerHTML = '';
+                    new QRCode(qrEl, {
+                        text: data.address,
+                        width: 128, height: 128,
+                        colorDark: '#000000', colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.M,
+                    });
+                }},
+            ];
+
+            for (let i = 0; i < steps.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, i === 0 ? 100 : 300));
+                const step = steps[i];
+                const stepEl = document.getElementById(step.el);
+                step.content();
+                stepEl.style.display = '';
+                stepEl.style.animationDelay = '0s';
+            }
+
+            _lastGeneratedWallet = data;
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+            document.getElementById('hd-action-bar').style.display = '';
+
+            await new Promise(resolve => setTimeout(resolve, 100));
+            document.getElementById('hd-backup-notice').innerHTML = t('hd.backupWarning');
+            document.getElementById('hd-backup-warning').style.display = '';
+            showToast(t('hd.recovered'));
+
+        } catch (err) {
+            showToast(t('hd.invalidMnemonic') + ': ' + err.message, true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = t('hd.recoverBtn');
+        }
+    });
+
+    // Recover from xpub (watch-only)
+    document.getElementById('hd-xpub-recover-btn').addEventListener('click', async () => {
+        const xpub = document.getElementById('hd-xpub-input').value.trim();
+        if (!xpub) {
+            showToast(t('hd.invalidXpub'), true);
+            return;
+        }
+
+        const btn = document.getElementById('hd-xpub-recover-btn');
+        btn.disabled = true;
+        btn.textContent = t('hd.recovering');
+
+        try {
+            const data = await apiPost('wallet/recover-xpub', { xpub });
+
+            // Hide input cards
+            document.getElementById('hd-xpub-input-card').style.display = 'none';
+
+            // Show the flow container — only master xpub, pubkey, address (no mnemonic, no privkey)
+            document.getElementById('hd-flow-container').style.display = 'block';
+
+            // Hide mnemonic and privkey steps
+            document.getElementById('hd-step-mnemonic').style.display = 'none';
+            document.getElementById('hd-step-privkey').style.display = 'none';
+
+            // Show master key step (xpub only)
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const masterEl = document.getElementById('hd-step-master');
+            document.getElementById('hd-master-keys').innerHTML =
+                `<div class="keypair-box">
+                    <div class="keypair-row"><span class="keypair-label" style="background:rgba(46,204,113,0.2);color:var(--success)">xpub</span><span class="keypair-value mono-text">${escapeHtml(data.xpub)}</span></div>
+                </div>
+                <div class="watch-only-badge">${escapeHtml(t('hd.watchOnly'))}</div>`;
+            masterEl.style.display = '';
+            masterEl.style.animationDelay = '0s';
+
+            // Show public key step
+            await new Promise(resolve => setTimeout(resolve, 300));
+            const pubEl = document.getElementById('hd-step-pubkey');
+            document.getElementById('hd-pubkey').textContent = data.public_key_hex;
+            pubEl.style.display = '';
+            pubEl.style.animationDelay = '0s';
+
+            // Show address step
+            await new Promise(resolve => setTimeout(resolve, 300));
+            const addrEl = document.getElementById('hd-step-address');
+            document.getElementById('hd-address').textContent = data.address;
+            const qrEl = document.getElementById('hd-address-qr');
+            qrEl.innerHTML = '';
+            new QRCode(qrEl, {
+                text: data.address,
+                width: 128, height: 128,
+                colorDark: '#000000', colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M,
+            });
+            addrEl.style.display = '';
+            addrEl.style.animationDelay = '0s';
+
+            // Store partial wallet data for copy (no privkey/mnemonic)
+            _lastGeneratedWallet = {
+                mnemonic: '',
+                master_xprv: '',
+                master_xpub: data.xpub,
+                private_key_wif: '',
+                public_key_hex: data.public_key_hex,
+                address: data.address,
+            };
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+            document.getElementById('hd-action-bar').style.display = '';
+
+            // No backup warning for watch-only
+            document.getElementById('hd-backup-warning').style.display = 'none';
+            showToast(t('hd.recoveredXpub'));
+
+        } catch (err) {
+            showToast(t('hd.invalidXpub') + ': ' + err.message, true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = t('hd.recoverBtn');
+        }
+    });
+
+    // ========================================================
+    // 3-1b. BALANCE CHECK (xpub / Address)
+    // ========================================================
+
+    const _allBalanceCards = ['hd-xpub-balance-card', 'hd-address-balance-card'];
+
+    function hideAllBalanceCards() {
+        _allBalanceCards.forEach(id => {
+            document.getElementById(id).style.display = 'none';
+        });
+    }
+
+    function hideAllInputCards() {
+        document.getElementById('hd-mnemonic-input-card').style.display = 'none';
+        document.getElementById('hd-xpub-input-card').style.display = 'none';
+        hideAllBalanceCards();
+    }
+
+    function hideGeneratedResults() {
+        document.getElementById('hd-flow-container').style.display = 'none';
+        document.getElementById('hd-backup-warning').style.display = 'none';
+        document.getElementById('hd-action-bar').style.display = 'none';
+        document.getElementById('hd-xpub-balance-result').style.display = 'none';
+        document.getElementById('hd-address-balance-result').style.display = 'none';
+        _lastGeneratedWallet = null;
+    }
+
+    // Toggle xpub balance card
+    document.getElementById('hd-balance-xpub-btn').addEventListener('click', () => {
+        const card = document.getElementById('hd-xpub-balance-card');
+        const wasHidden = card.style.display === 'none';
+        hideAllInputCards();
+        hideGeneratedResults();
+        card.style.display = wasHidden ? '' : 'none';
+    });
+
+    // Toggle address balance card
+    document.getElementById('hd-balance-address-btn').addEventListener('click', () => {
+        const card = document.getElementById('hd-address-balance-card');
+        const wasHidden = card.style.display === 'none';
+        hideAllInputCards();
+        hideGeneratedResults();
+        card.style.display = wasHidden ? '' : 'none';
+    });
+
+    // Close buttons
+    document.getElementById('hd-xpub-balance-close').addEventListener('click', () => {
+        document.getElementById('hd-xpub-balance-card').style.display = 'none';
+    });
+    document.getElementById('hd-address-balance-close').addEventListener('click', () => {
+        document.getElementById('hd-address-balance-card').style.display = 'none';
+    });
+
+    // xpub balance check
+    document.getElementById('hd-xpub-balance-check-btn').addEventListener('click', async () => {
+        const xpub = document.getElementById('hd-xpub-balance-input').value.trim();
+        if (!xpub) {
+            showToast(t('bal.invalidXpub'), true);
+            return;
+        }
+
+        const btn = document.getElementById('hd-xpub-balance-check-btn');
+        btn.disabled = true;
+        btn.textContent = t('bal.checking');
+
+        try {
+            const data = await apiPost('wallet/xpub-balance', { xpub });
+
+            const resultEl = document.getElementById('hd-xpub-balance-result');
+            resultEl.style.display = '';
+
+            // Hide the flow container and other results
+            document.getElementById('hd-flow-container').style.display = 'none';
+            document.getElementById('hd-backup-warning').style.display = 'none';
+            document.getElementById('hd-action-bar').style.display = 'none';
+            document.getElementById('hd-address-balance-result').style.display = 'none';
+
+            renderInfoGrid('xpub-balance-summary', [
+                { label: t('bal.totalBalance'), value: formatCRN(data.total_balance), cls: 'large' },
+                { label: t('bal.addressesChecked'), value: data.addresses_checked },
+                { label: t('bal.addressesWithBalance'), value: data.addresses_with_balance },
+            ]);
+
+            const tbody = document.getElementById('xpub-balance-table');
+            tbody.innerHTML = '';
+
+            if (data.addresses.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted)">${escapeHtml(t('bal.noBalance'))}</td></tr>`;
+            } else {
+                data.addresses.forEach(addr => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="mono">${escapeHtml(addr.path)}</td>
+                        <td class="mono">${escapeHtml(addr.address)}</td>
+                        <td class="mono">${formatCRN(addr.balance)}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('hd-xpub-balance-card').style.display = 'none';
+            resultEl.scrollIntoView({ behavior: 'smooth' });
+            showToast(data.addresses_with_balance > 0
+                ? t('bal.totalBalance') + ': ' + formatCRN(data.total_balance)
+                : t('bal.noBalance'));
+        } catch (err) {
+            showToast(t('bal.invalidXpub') + ': ' + err.message, true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = t('bal.checkBtn');
+        }
+    });
+
+    // Address balance check
+    document.getElementById('hd-address-balance-check-btn').addEventListener('click', async () => {
+        const address = document.getElementById('hd-address-balance-input').value.trim();
+        if (!address) {
+            showToast(t('bal.invalidAddress'), true);
+            return;
+        }
+
+        const btn = document.getElementById('hd-address-balance-check-btn');
+        btn.disabled = true;
+        btn.textContent = t('bal.checking');
+
+        try {
+            const data = await apiPost('wallet/address-balance', { address });
+
+            const resultEl = document.getElementById('hd-address-balance-result');
+            resultEl.style.display = '';
+
+            // Hide the flow container and other results
+            document.getElementById('hd-flow-container').style.display = 'none';
+            document.getElementById('hd-backup-warning').style.display = 'none';
+            document.getElementById('hd-action-bar').style.display = 'none';
+            document.getElementById('hd-xpub-balance-result').style.display = 'none';
+
+            document.getElementById('address-balance-display').innerHTML =
+                `<div class="balance-label">${escapeHtml(t('bal.balance'))}</div>
+                 <div class="balance-amount">${formatCRN(data.balance)}</div>`;
+
+            renderInfoGrid('address-balance-info', [
+                { label: t('bal.address'), value: data.address, cls: 'mono' },
+                { label: t('bal.utxoCount'), value: data.utxo_count },
+            ]);
+
+            document.getElementById('hd-address-balance-card').style.display = 'none';
+            resultEl.scrollIntoView({ behavior: 'smooth' });
+            showToast(data.balance > 0
+                ? t('bal.balance') + ': ' + formatCRN(data.balance)
+                : t('bal.noBalance'));
+        } catch (err) {
+            showToast(t('bal.invalidAddress') + ': ' + err.message, true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = t('bal.checkBtn');
+        }
     });
 
     // ========================================================

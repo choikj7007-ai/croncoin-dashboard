@@ -572,6 +572,7 @@ td.mono {
     margin-top: 16px;
     display: flex;
     gap: 12px;
+    flex-wrap: wrap;
 }
 .btn-ghost {
     background: transparent;
@@ -1101,6 +1102,92 @@ td.mono {
     font-size: 15px;
     color: var(--text-secondary);
     line-height: 1.7;
+}
+
+/* Recovery Input Cards */
+.recover-input-card {
+    margin-top: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.recover-input-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.recover-input-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.btn-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+.btn-close:hover {
+    color: var(--text-primary);
+}
+
+.recover-textarea {
+    width: 100%;
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 15px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    resize: vertical;
+    box-sizing: border-box;
+    margin-bottom: 12px;
+}
+
+.recover-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.recover-input-field {
+    width: 100%;
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 15px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-sizing: border-box;
+    margin-bottom: 12px;
+}
+
+.recover-input-field:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* Watch-only badge */
+.watch-only-badge {
+    margin-top: 8px;
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(52, 152, 219, 0.15);
+    border: 1px solid rgba(52, 152, 219, 0.3);
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #3498db;
 }
 
 /* Loading indicator */

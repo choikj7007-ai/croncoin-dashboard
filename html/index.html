@@ -131,7 +131,74 @@
             <div class="guide-notice" id="wallet-guide-notice"></div>
             <div class="address-guide-actions" id="wallet-generate-actions">
                 <button class="btn btn-warning" id="hd-generate-btn" data-i18n="hd.generateBtn">Generate New Wallet</button>
+                <button class="btn btn-secondary" id="hd-recover-mnemonic-btn" data-i18n="hd.recoverMnemonicBtn">Recover from Mnemonic</button>
+                <button class="btn btn-secondary" id="hd-recover-xpub-btn" data-i18n="hd.recoverXpubBtn">Lookup from xpub</button>
+                <button class="btn btn-secondary" id="hd-balance-xpub-btn" data-i18n="bal.xpubBtn">Check Balance by xpub</button>
+                <button class="btn btn-secondary" id="hd-balance-address-btn" data-i18n="bal.addressBtn">Check Balance by Address</button>
             </div>
+
+            <!-- Mnemonic Input Card -->
+            <div class="recover-input-card" id="hd-mnemonic-input-card" style="display:none">
+                <div class="recover-input-header">
+                    <span class="recover-input-title" data-i18n="hd.mnemonicInputLabel">Enter your 12-word mnemonic</span>
+                    <button class="btn-close" id="hd-mnemonic-input-close">&times;</button>
+                </div>
+                <textarea id="hd-mnemonic-input" class="recover-textarea" rows="3" data-i18n-placeholder="hd.mnemonicInputLabel" placeholder="Enter your 12-word mnemonic"></textarea>
+                <button class="btn btn-primary" id="hd-mnemonic-recover-btn" data-i18n="hd.recoverBtn">Lookup</button>
+            </div>
+
+            <!-- xpub Input Card -->
+            <div class="recover-input-card" id="hd-xpub-input-card" style="display:none">
+                <div class="recover-input-header">
+                    <span class="recover-input-title" data-i18n="hd.xpubInputLabel">Enter your xpub (tpub) key</span>
+                    <button class="btn-close" id="hd-xpub-input-close">&times;</button>
+                </div>
+                <input type="text" id="hd-xpub-input" class="recover-input-field" data-i18n-placeholder="hd.xpubInputLabel" placeholder="Enter your xpub (tpub) key">
+                <button class="btn btn-primary" id="hd-xpub-recover-btn" data-i18n="hd.recoverBtn">Lookup</button>
+            </div>
+
+            <!-- xpub Balance Input Card -->
+            <div class="recover-input-card" id="hd-xpub-balance-card" style="display:none">
+                <div class="recover-input-header">
+                    <span class="recover-input-title" data-i18n="bal.xpubInputLabel">Enter xpub (tpub) key</span>
+                    <button class="btn-close" id="hd-xpub-balance-close">&times;</button>
+                </div>
+                <input type="text" id="hd-xpub-balance-input" class="recover-input-field" data-i18n-placeholder="bal.xpubInputLabel" placeholder="Enter xpub (tpub) key">
+                <button class="btn btn-primary" id="hd-xpub-balance-check-btn" data-i18n="bal.checkBtn">Check Balance</button>
+            </div>
+
+            <!-- Address Balance Input Card -->
+            <div class="recover-input-card" id="hd-address-balance-card" style="display:none">
+                <div class="recover-input-header">
+                    <span class="recover-input-title" data-i18n="bal.addressInputLabel">Enter wallet address</span>
+                    <button class="btn-close" id="hd-address-balance-close">&times;</button>
+                </div>
+                <input type="text" id="hd-address-balance-input" class="recover-input-field" data-i18n-placeholder="bal.addressInputLabel" placeholder="Enter wallet address">
+                <button class="btn btn-primary" id="hd-address-balance-check-btn" data-i18n="bal.checkBtn">Check Balance</button>
+            </div>
+        </div>
+
+        <!-- xpub Balance Result -->
+        <div id="hd-xpub-balance-result" class="card" style="display:none">
+            <div class="card-title" data-i18n="bal.xpubBtn">Check Balance by xpub</div>
+            <div class="info-grid" id="xpub-balance-summary"></div>
+            <div id="xpub-balance-table-wrap" class="table-wrap" style="margin-top:16px">
+                <table>
+                    <thead><tr>
+                        <th data-i18n="bal.path">Path</th>
+                        <th data-i18n="bal.address">Address</th>
+                        <th data-i18n="bal.balance">Balance</th>
+                    </tr></thead>
+                    <tbody id="xpub-balance-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Address Balance Result -->
+        <div id="hd-address-balance-result" class="card" style="display:none">
+            <div class="card-title" data-i18n="bal.addressBtn">Check Balance by Address</div>
+            <div class="balance-display" id="address-balance-display"></div>
+            <div class="info-grid" id="address-balance-info"></div>
         </div>
 
         <!-- HD Flow Steps (progressively revealed) -->

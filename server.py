@@ -381,6 +381,158 @@ def _pubkey_to_bech32_address(pubkey_bytes, hrp="crnrt"):
     return _bech32_encode(hrp, [0] + data5)
 
 
+def _decompress_pubkey(pubkey_bytes):
+    """Decompress a 33-byte compressed public key to (x, y) point."""
+    if len(pubkey_bytes) != 33:
+        raise ValueError("Invalid compressed pubkey length")
+    prefix = pubkey_bytes[0]
+    x = int.from_bytes(pubkey_bytes[1:], "big")
+    P = _SECP256K1_P
+    # y^2 = x^3 + 7 mod P
+    y_sq = (pow(x, 3, P) + 7) % P
+    y = pow(y_sq, (P + 1) // 4, P)
+    if y_sq != pow(y, 2, P):
+        raise ValueError("Invalid point on curve")
+    if (prefix == 0x02 and y % 2 != 0) or (prefix == 0x03 and y % 2 == 0):
+        y = P - y
+    return (x, y)
+
+
+def _compress_point(point):
+    """Compress an (x, y) EC point to 33-byte compressed pubkey."""
+    x, y = point
+    prefix = b"\x02" if y % 2 == 0 else b"\x03"
+    return prefix + x.to_bytes(32, "big")
+
+
+def _parse_xpub(xpub_b58):
+    """Parse tpub/xpub base58 string → (pubkey_33bytes, chain_code_32bytes, depth, fingerprint, child_num)."""
+    payload = _b58decode_check(xpub_b58)
+    # Extended key: 4(ver) + 1(depth) + 4(fingerprint) + 4(child#) + 32(chaincode) + 33(pubkey)
+    if len(payload) != 78:
+        raise ValueError("Invalid extended key length")
+    depth = payload[4]
+    fingerprint = payload[5:9]
+    child_num = int.from_bytes(payload[9:13], "big")
+    chain_code = payload[13:45]
+    pubkey = payload[45:78]  # 33 bytes compressed pubkey
+    return pubkey, chain_code, depth, fingerprint, child_num
+
+
+def _bip32_derive_child_pub(parent_pub_bytes, chain_code, index):
+    """Derive child public key (non-hardened only) from parent public key + chain code."""
+    if index >= 0x80000000:
+        raise ValueError("Cannot derive hardened child from public key")
+    data = parent_pub_bytes + index.to_bytes(4, "big")
+    I = hmac.new(chain_code, data, hashlib.sha512).digest()
+    IL, IR = I[:32], I[32:]
+    # child_pub = point_add(parent_pub_point, IL * G)
+    il_int = int.from_bytes(IL, "big")
+    if il_int >= _SECP256K1_N:
+        raise ValueError("Invalid child key")
+    parent_point = _decompress_pubkey(parent_pub_bytes)
+    il_point = _ec_point_mul(il_int, (_SECP256K1_Gx, _SECP256K1_Gy))
+    child_point = _ec_point_add(parent_point, il_point)
+    if child_point is None:
+        raise ValueError("Invalid child key (point at infinity)")
+    child_pub = _compress_point(child_point)
+    return child_pub, IR
+
+
+def _validate_mnemonic(mnemonic):
+    """Validate a BIP39 mnemonic: word count and word list membership."""
+    words = mnemonic.strip().split()
+    if len(words) not in (12, 15, 18, 21, 24):
+        return False, "Mnemonic must be 12, 15, 18, 21, or 24 words"
+    for w in words:
+        if w not in BIP39_WORDS:
+            return False, f"Unknown word: {w}"
+    return True, None
+
+
+def _recover_from_mnemonic(mnemonic, passphrase="", derivation_path="m/84h/1h/0h/0/0"):
+    """Recover wallet from mnemonic: same as _full_hd_generate but skip entropy generation."""
+    valid, err = _validate_mnemonic(mnemonic)
+    if not valid:
+        raise ValueError(err)
+
+    mnemonic = " ".join(mnemonic.strip().split())  # normalize whitespace
+
+    # Seed from mnemonic
+    seed = _mnemonic_to_seed(mnemonic, passphrase)
+
+    # Master key
+    master_key, master_chain = _seed_to_master_key(seed)
+    master_pub = _privkey_to_compressed_pubkey(master_key)
+    master_tprv = _encode_tprv(master_key, master_chain)
+    master_tpub = _encode_tpub(master_pub, master_chain)
+
+    # HD derivation
+    indices = _parse_hdkeypath(derivation_path)
+    path_parts = derivation_path.strip().split("/")
+
+    derivation_chain = [{"path": "m", "xprv": master_tprv, "xpub": master_tpub}]
+    key, chain = master_key, master_chain
+    fingerprint = b"\x00\x00\x00\x00"
+    for i, idx in enumerate(indices):
+        parent_pub = _privkey_to_compressed_pubkey(key)
+        fingerprint = _hash160(parent_pub)[:4]
+        key, chain = _bip32_derive_child(key, chain, idx)
+        depth = i + 1
+        pub = _privkey_to_compressed_pubkey(key)
+        level_path = "/".join(path_parts[:depth + 1])
+        derivation_chain.append({
+            "path": level_path,
+            "xprv": _encode_tprv(key, chain, depth, fingerprint, idx),
+            "xpub": _encode_tpub(pub, chain, depth, fingerprint, idx),
+        })
+
+    privkey_wif = _privkey_to_wif(key, testnet=True)
+    pubkey = _privkey_to_compressed_pubkey(key)
+    address = _pubkey_to_bech32_address(pubkey, hrp="crnrt")
+
+    return {
+        "mnemonic": mnemonic,
+        "seed_hex": seed.hex(),
+        "master_xprv": master_tprv,
+        "master_xpub": master_tpub,
+        "derivation_path": derivation_path,
+        "derivation_chain": derivation_chain,
+        "private_key_wif": privkey_wif,
+        "public_key_hex": pubkey.hex(),
+        "address": address,
+    }
+
+
+def _recover_from_xpub(xpub_b58, child_path="0/0"):
+    """Recover public key and address from xpub (watch-only, no private key)."""
+    pub_bytes, chain_code, depth, fingerprint, child_num = _parse_xpub(xpub_b58)
+
+    # Parse child path (non-hardened only)
+    parts = child_path.strip().split("/")
+    indices = []
+    for p in parts:
+        if not p:
+            continue
+        if p.endswith("h") or p.endswith("'"):
+            raise ValueError("Cannot derive hardened child from xpub")
+        indices.append(int(p))
+
+    current_pub = pub_bytes
+    current_chain = chain_code
+    for idx in indices:
+        current_pub, current_chain = _bip32_derive_child_pub(current_pub, current_chain, idx)
+
+    address = _pubkey_to_bech32_address(current_pub, hrp="crnrt")
+
+    return {
+        "xpub": xpub_b58,
+        "derivation_path": child_path,
+        "public_key_hex": current_pub.hex(),
+        "address": address,
+    }
+
+
 def _derive_child_with_fingerprint(parent_key, parent_chain_code, index):
     """Derive child key and compute parent fingerprint."""
     parent_pub = _privkey_to_compressed_pubkey(parent_key)
@@ -721,6 +873,147 @@ def generate_hd_wallet(handler, match):
         json_response(handler, result)
     except Exception as e:
         error_response(handler, str(e))
+
+
+@route("POST", r"/api/wallet/recover-mnemonic")
+def recover_mnemonic(handler, match):
+    """Recover wallet from BIP39 mnemonic (12 words)."""
+    body = _read_body(handler)
+    if body is None:
+        return error_response(handler, "Invalid JSON body", 400)
+    mnemonic = body.get("mnemonic", "").strip()
+    if not mnemonic:
+        return error_response(handler, "mnemonic is required", 400)
+    passphrase = body.get("passphrase", "")
+    path = body.get("path", "m/84h/1h/0h/0/0")
+    try:
+        result = _recover_from_mnemonic(mnemonic, passphrase, path)
+        json_response(handler, result)
+    except ValueError as e:
+        error_response(handler, str(e), 400)
+    except Exception as e:
+        error_response(handler, str(e))
+
+
+@route("POST", r"/api/wallet/recover-xpub")
+def recover_xpub(handler, match):
+    """Derive public key and address from xpub/tpub (watch-only)."""
+    body = _read_body(handler)
+    if body is None:
+        return error_response(handler, "Invalid JSON body", 400)
+    xpub = body.get("xpub", "").strip()
+    if not xpub:
+        return error_response(handler, "xpub is required", 400)
+    path = body.get("path", "0/0")
+    try:
+        result = _recover_from_xpub(xpub, path)
+        json_response(handler, result)
+    except Exception as e:
+        msg = str(e)
+        if "hardened" in msg.lower():
+            error_response(handler, msg, 400)
+        else:
+            error_response(handler, "Invalid xpub key", 400)
+
+
+@route("POST", r"/api/wallet/xpub-balance")
+def xpub_balance(handler, match):
+    """Check balances for all addresses derived from an xpub key."""
+    body = _read_body(handler)
+    if body is None:
+        return error_response(handler, "Invalid JSON body", 400)
+    xpub = body.get("xpub", "").strip()
+    if not xpub:
+        return error_response(handler, "xpub is required", 400)
+    count = body.get("count", 20)
+    if not isinstance(count, int) or count < 1 or count > 200:
+        return error_response(handler, "count must be 1-200", 400)
+
+    try:
+        pub_bytes, chain_code, depth, fingerprint, child_num = _parse_xpub(xpub)
+    except Exception:
+        return error_response(handler, "Invalid xpub key", 400)
+
+    # Derive receive (0/i) and change (1/i) addresses
+    addr_map = {}  # address -> path string
+    scan_descriptors = []
+    for chain_idx in (0, 1):
+        try:
+            chain_pub, chain_chain = _bip32_derive_child_pub(pub_bytes, chain_code, chain_idx)
+        except Exception:
+            continue
+        for i in range(count):
+            try:
+                child_pub, _ = _bip32_derive_child_pub(chain_pub, chain_chain, i)
+                addr = _pubkey_to_bech32_address(child_pub, hrp="crnrt")
+                path_str = f"{chain_idx}/{i}"
+                addr_map[addr] = path_str
+                scan_descriptors.append(f"addr({addr})")
+            except Exception:
+                continue
+
+    if not scan_descriptors:
+        return error_response(handler, "Failed to derive addresses from xpub", 400)
+
+    # Batch query using scantxoutset
+    result, err = rpc_call("scantxoutset", ["start", scan_descriptors])
+    if err:
+        return error_response(handler, err.get("message", "scantxoutset failed"))
+
+    # Aggregate balances by address
+    balances = {}  # address -> total balance
+    for utxo in result.get("unspents", []):
+        addr = utxo.get("desc", "")
+        # desc format: "addr(crnrt1q...)#checksum"
+        m = re.match(r"addr\(([^)]+)\)", addr)
+        if m:
+            a = m.group(1)
+            balances[a] = balances.get(a, 0) + utxo.get("amount", 0)
+
+    # Build response with only non-zero balances
+    addresses = []
+    for addr, bal in balances.items():
+        if bal > 0 and addr in addr_map:
+            addresses.append({
+                "path": addr_map[addr],
+                "address": addr,
+                "balance": bal,
+            })
+    addresses.sort(key=lambda x: x["path"])
+
+    total_balance = sum(a["balance"] for a in addresses)
+
+    json_response(handler, {
+        "xpub": xpub,
+        "total_balance": total_balance,
+        "addresses_checked": len(addr_map),
+        "addresses_with_balance": len(addresses),
+        "addresses": addresses,
+    })
+
+
+@route("POST", r"/api/wallet/address-balance")
+def address_balance(handler, match):
+    """Check balance for a single address using scantxoutset."""
+    body = _read_body(handler)
+    if body is None:
+        return error_response(handler, "Invalid JSON body", 400)
+    address = body.get("address", "").strip()
+    if not address:
+        return error_response(handler, "address is required", 400)
+
+    result, err = rpc_call("scantxoutset", ["start", [f"addr({address})"]])
+    if err:
+        msg = err.get("message", "")
+        if "Invalid address" in msg or "invalid" in msg.lower():
+            return error_response(handler, "Invalid address", 400)
+        return error_response(handler, msg)
+
+    json_response(handler, {
+        "address": address,
+        "balance": result.get("total_amount", 0),
+        "utxo_count": len(result.get("unspents", [])),
+    })
 
 
 # --- Rich List (UTXO scan with cache) ---
