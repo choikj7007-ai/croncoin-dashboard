@@ -11,6 +11,7 @@ import sys
 import re
 import hashlib
 import hmac
+import math
 
 from bip39_english import WORDS as BIP39_WORDS
 
@@ -1228,6 +1229,23 @@ def privkey_info(handler, match):
     })
 
 
+def _estimate_vsize(n_inputs, n_outputs):
+    """Estimate transaction virtual size for P2WPKH inputs/outputs."""
+    # P2WPKH: ~68 vbytes per input, ~31 vbytes per output, ~12 overhead
+    return 12 + n_inputs * 68 + n_outputs * 31
+
+
+def _calc_fee(n_inputs, n_outputs, fee_rate_per_kb=0.001):
+    """Calculate minimum fee based on estimated vsize and fee rate (CRN/kB).
+    Returns fee in CRN, rounded up to nearest satoshi (0.001 CRN)."""
+    vsize = _estimate_vsize(n_inputs, n_outputs)
+    # fee_rate_per_kb is in CRN per 1000 vbytes (e.g. 0.001 CRN/kB)
+    fee_crn = vsize * fee_rate_per_kb / 1000
+    # Round up to nearest 0.001 (1 satoshi with COIN=1000), add 1 sat buffer
+    fee_sats = math.ceil(fee_crn * 1000) + 1
+    return fee_sats / 1000
+
+
 @route("POST", r"/api/wallet/send-privkey")
 def send_privkey(handler, match):
     """Send coins using private key (hex or WIF): build raw tx, sign, broadcast."""
@@ -1246,7 +1264,6 @@ def send_privkey(handler, match):
         return error_response(handler, "amount must be positive", 400)
 
     amount = float(amount)
-    fee = 0.001
 
     # 1. Decode private key (hex or WIF) → sender address + WIF for signing
     try:
@@ -1266,32 +1283,47 @@ def send_privkey(handler, match):
     if not utxos:
         return error_response(handler, "No UTXOs found for this address", 400)
 
-    # 3. Coin selection: sort ascending, pick until amount + fee is covered
-    utxos.sort(key=lambda u: u["amount"])
+    # 3. Filter out immature coinbase UTXOs (need 100 confirmations)
+    COINBASE_MATURITY = 100
+    spendable_utxos = [u for u in utxos
+                       if not (u.get("coinbase") and u.get("confirmations", 0) < COINBASE_MATURITY)]
+
+    if not spendable_utxos:
+        return error_response(handler, "No spendable UTXOs. All coins are still maturing (need 100 confirmations).", 400)
+
+    # 4. Coin selection with dynamic fee calculation
+    spendable_utxos.sort(key=lambda u: u["amount"])
     selected = []
     total_in = 0.0
+    # Initial fee estimate (1 input, 2 outputs)
+    fee = _calc_fee(1, 2)
     needed = amount + fee
-    for utxo in utxos:
+
+    for utxo in spendable_utxos:
         selected.append(utxo)
         total_in += utxo["amount"]
+        # Recalculate fee based on actual number of selected inputs
+        fee = _calc_fee(len(selected), 2)
+        needed = amount + fee
         if total_in >= needed:
             break
 
     if total_in < needed:
-        return error_response(handler, f"Insufficient balance. Have {total_in}, need {needed}", 400)
+        spendable_total = sum(u["amount"] for u in spendable_utxos)
+        return error_response(handler, f"Insufficient spendable balance. Have {spendable_total}, need {needed}", 400)
 
-    # 4. Build raw transaction
+    # 5. Build raw transaction
     inputs = [{"txid": u["txid"], "vout": u["vout"]} for u in selected]
     change = round(total_in - amount - fee, 8)
     outputs = {to_address: round(amount, 8)}
-    if change > 0.00001:  # dust threshold
+    if change > 0.001:  # dust threshold: 1 satoshi (COIN=1000)
         outputs[from_address] = change
 
     raw_tx, err = rpc_call("createrawtransaction", [inputs, outputs])
     if err:
         return error_response(handler, f"createrawtransaction failed: {err.get('message', '')}")
 
-    # 5. Sign with WIF key — provide prevtxs for segwit inputs
+    # 6. Sign with WIF key — provide prevtxs for segwit inputs
     prevtxs = [{"txid": u["txid"], "vout": u["vout"],
                 "scriptPubKey": u["scriptPubKey"], "amount": u["amount"]}
                for u in selected]
@@ -1303,7 +1335,7 @@ def send_privkey(handler, match):
         msg = errors[0].get("error", "Signing incomplete") if errors else "Signing incomplete"
         return error_response(handler, f"Transaction signing failed: {msg}")
 
-    # 6. Broadcast
+    # 7. Broadcast
     txid, err = rpc_call("sendrawtransaction", [signed["hex"]])
     if err:
         return error_response(handler, f"sendrawtransaction failed: {err.get('message', '')}")
