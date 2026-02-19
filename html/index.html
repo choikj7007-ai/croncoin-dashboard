@@ -182,9 +182,13 @@
                 <div class="hd-step-header">
                     <span class="hd-step-num">5</span>
                     <span class="hd-step-title" data-i18n="hd.step7">Address</span>
+                    <span class="hd-step-warning" data-i18n="hd.addressNotice">To receive coins, share this address</span>
                 </div>
                 <div class="hd-step-desc" data-i18n="hd.step7Desc">Public Key → SHA-256 → RIPEMD-160 → Bech32 encoding</div>
-                <div class="hd-step-value address-display" id="hd-address"></div>
+                <div class="address-with-qr">
+                    <div class="hd-step-value address-display" id="hd-address"></div>
+                    <div class="address-qr" id="hd-address-qr"></div>
+                </div>
             </div>
 
             <!-- Action Buttons -->
@@ -361,6 +365,7 @@
 <!-- Toast -->
 <div id="toast" class="toast"></div>
 
+<script src="js/qrcode.min.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/app.js"></script>

@@ -887,6 +887,31 @@ td.mono {
     border-radius: 6px;
 }
 
+/* Address + QR Code */
+.address-with-qr {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.address-with-qr .hd-step-value {
+    flex: 1;
+    min-width: 0;
+}
+
+.address-qr {
+    flex-shrink: 0;
+    background: #fff;
+    padding: 8px;
+    border-radius: 8px;
+    line-height: 0;
+}
+
+.address-qr canvas,
+.address-qr img {
+    display: block;
+}
+
 /* HD Action Buttons */
 .hd-action-bar {
     display: flex;
