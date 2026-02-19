@@ -136,74 +136,61 @@
 
         <!-- HD Flow Steps (progressively revealed) -->
         <div id="hd-flow-container" style="display:none">
-            <!-- Step 1: Entropy -->
-            <div class="card hd-step" id="hd-step-1">
+            <!-- Step 1: Mnemonic -->
+            <div class="card hd-step" id="hd-step-mnemonic">
                 <div class="hd-step-header">
                     <span class="hd-step-num">1</span>
-                    <span class="hd-step-title" data-i18n="hd.step1">Entropy</span>
-                    <span class="hd-step-arrow">&darr;</span>
-                </div>
-                <div class="hd-step-desc" data-i18n="hd.step1Desc">128-bit random number (source of all security)</div>
-                <div class="hd-step-value mono-text" id="hd-entropy"></div>
-            </div>
-            <!-- Step 2: Mnemonic -->
-            <div class="card hd-step" id="hd-step-2">
-                <div class="hd-step-header">
-                    <span class="hd-step-num">2</span>
-                    <span class="hd-step-title" data-i18n="hd.step2">Mnemonic (Seed Phrase)</span>
+                    <span class="hd-step-title" data-i18n="hd.step2">Seed 12 Words (Mnemonic)</span>
+                    <span class="hd-step-warning" data-i18n="hd.mnemonicWarning">VERY IMPORTANT : Write on paper and store in a safe place</span>
                     <span class="hd-step-arrow">&darr;</span>
                 </div>
                 <div class="hd-step-desc" data-i18n="hd.step2Desc">12 words derived from entropy + checksum (BIP39)</div>
                 <div class="hd-step-value" id="hd-mnemonic"></div>
             </div>
-            <!-- Step 3: Master Key -->
-            <div class="card hd-step" id="hd-step-3">
+            <!-- Step 2: Master Key -->
+            <div class="card hd-step" id="hd-step-master">
                 <div class="hd-step-header">
-                    <span class="hd-step-num">3</span>
+                    <span class="hd-step-num">2</span>
                     <span class="hd-step-title" data-i18n="hd.step3">Master Key</span>
                     <span class="hd-step-arrow">&darr;</span>
                 </div>
                 <div class="hd-step-desc" data-i18n="hd.step3Desc">Mnemonic + HMAC-SHA512 → two keys generated simultaneously</div>
                 <div id="hd-master-keys"></div>
             </div>
-            <!-- Step 4: HD Derivation -->
-            <div class="card hd-step" id="hd-step-4">
+            <!-- Step 3: Private Key -->
+            <div class="card hd-step" id="hd-step-privkey">
                 <div class="hd-step-header">
-                    <span class="hd-step-num">4</span>
-                    <span class="hd-step-title" data-i18n="hd.step4">HD Derivation</span>
-                    <span class="hd-step-arrow">&darr;</span>
-                </div>
-                <div class="hd-step-desc" data-i18n="hd.step4Desc">xprv derivation → child xprv + xpub / xpub derivation → child xpub only</div>
-                <div id="hd-derivation-chain"></div>
-            </div>
-            <!-- Step 5: Private Key -->
-            <div class="card hd-step" id="hd-step-5">
-                <div class="hd-step-header">
-                    <span class="hd-step-num">5</span>
+                    <span class="hd-step-num">3</span>
                     <span class="hd-step-title" data-i18n="hd.step5">Private Key</span>
                     <span class="hd-step-arrow">&darr;</span>
                 </div>
                 <div class="hd-step-desc" data-i18n="hd.step5Desc">WIF private key extracted from the final child xprv</div>
                 <div class="hd-step-value mono-text privkey-text" id="hd-privkey"></div>
             </div>
-            <!-- Step 6: Public Key -->
-            <div class="card hd-step" id="hd-step-6">
+            <!-- Step 4: Public Key -->
+            <div class="card hd-step" id="hd-step-pubkey">
                 <div class="hd-step-header">
-                    <span class="hd-step-num">6</span>
+                    <span class="hd-step-num">4</span>
                     <span class="hd-step-title" data-i18n="hd.step6">Public Key</span>
                     <span class="hd-step-arrow">&darr;</span>
                 </div>
                 <div class="hd-step-desc" data-i18n="hd.step6Desc">Compressed public key from secp256k1 elliptic curve multiplication</div>
                 <div class="hd-step-value mono-text" id="hd-pubkey"></div>
             </div>
-            <!-- Step 7: Address -->
-            <div class="card hd-step" id="hd-step-7">
+            <!-- Step 5: Address -->
+            <div class="card hd-step" id="hd-step-address">
                 <div class="hd-step-header">
-                    <span class="hd-step-num">7</span>
+                    <span class="hd-step-num">5</span>
                     <span class="hd-step-title" data-i18n="hd.step7">Address</span>
                 </div>
                 <div class="hd-step-desc" data-i18n="hd.step7Desc">Public Key → SHA-256 → RIPEMD-160 → Bech32 encoding</div>
                 <div class="hd-step-value address-display" id="hd-address"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="hd-action-bar" id="hd-action-bar" style="display:none">
+                <button class="btn btn-action" id="hd-copy-btn" data-i18n="hd.copyBtn">Copy</button>
+                <button class="btn btn-action" id="hd-save-btn" data-i18n="hd.saveBtn">Save as File</button>
             </div>
         </div>
 

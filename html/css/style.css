@@ -738,6 +738,13 @@ td.mono {
     color: var(--text-primary);
 }
 
+.hd-step-warning {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--error);
+    margin-left: 8px;
+}
+
 .hd-step-arrow {
     font-size: 18px;
     color: var(--text-muted);
@@ -878,6 +885,33 @@ td.mono {
     background: rgba(243, 156, 18, 0.08);
     border: 1px solid rgba(243, 156, 18, 0.15);
     border-radius: 6px;
+}
+
+/* HD Action Buttons */
+.hd-action-bar {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 16px;
+    padding: 16px 0;
+}
+
+.btn-action {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 12px 32px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-action:hover {
+    background: var(--border);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 /* Mining result */

@@ -297,16 +297,21 @@
     // 3. WALLET (HD Key Generation Flow)
     // ========================================================
 
+    const _hdStepIds = ['hd-step-mnemonic', 'hd-step-master', 'hd-step-privkey', 'hd-step-pubkey', 'hd-step-address'];
+    let _lastGeneratedWallet = null;
+
     function loadWalletGuide() {
         document.getElementById('wallet-guide-notice').innerHTML = t('hd.guideNotice');
         document.getElementById('hd-flow-container').style.display = 'none';
         document.getElementById('hd-backup-warning').style.display = 'none';
+        document.getElementById('hd-action-bar').style.display = 'none';
         document.getElementById('wallet-generate-actions').style.display = '';
+        _lastGeneratedWallet = null;
         // Clear previous values
-        for (let i = 1; i <= 7; i++) {
-            const stepEl = document.getElementById('hd-step-' + i);
-            if (stepEl) stepEl.style.display = 'none';
-        }
+        _hdStepIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
     }
 
     function renderKeyPair(xprv, xpub) {
@@ -350,10 +355,7 @@
 
             // Progressively reveal each step with delay
             const steps = [
-                { id: 1, content: () => {
-                    document.getElementById('hd-entropy').textContent = data.entropy_hex;
-                }},
-                { id: 2, content: () => {
+                { el: 'hd-step-mnemonic', content: () => {
                     const words = data.mnemonic.split(' ');
                     let html = '<div class="mnemonic-grid">';
                     words.forEach((w, i) => {
@@ -362,19 +364,16 @@
                     html += '</div>';
                     document.getElementById('hd-mnemonic').innerHTML = html;
                 }},
-                { id: 3, content: () => {
+                { el: 'hd-step-master', content: () => {
                     document.getElementById('hd-master-keys').innerHTML = renderKeyPair(data.master_xprv, data.master_xpub);
                 }},
-                { id: 4, content: () => {
-                    document.getElementById('hd-derivation-chain').innerHTML = renderDerivationChain(data.derivation_chain);
-                }},
-                { id: 5, content: () => {
+                { el: 'hd-step-privkey', content: () => {
                     document.getElementById('hd-privkey').textContent = data.private_key_wif;
                 }},
-                { id: 6, content: () => {
+                { el: 'hd-step-pubkey', content: () => {
                     document.getElementById('hd-pubkey').textContent = data.public_key_hex;
                 }},
-                { id: 7, content: () => {
+                { el: 'hd-step-address', content: () => {
                     document.getElementById('hd-address').textContent = data.address;
                 }},
             ];
@@ -382,14 +381,21 @@
             for (let i = 0; i < steps.length; i++) {
                 await new Promise(resolve => setTimeout(resolve, i === 0 ? 100 : 300));
                 const step = steps[i];
-                const stepEl = document.getElementById('hd-step-' + step.id);
+                const stepEl = document.getElementById(step.el);
                 step.content();
                 stepEl.style.display = '';
                 stepEl.style.animationDelay = '0s';
             }
 
+            // Store wallet data for copy/save
+            _lastGeneratedWallet = data;
+
+            // Show action buttons
+            await new Promise(resolve => setTimeout(resolve, 300));
+            document.getElementById('hd-action-bar').style.display = '';
+
             // Show backup warning after all steps
-            await new Promise(resolve => setTimeout(resolve, 400));
+            await new Promise(resolve => setTimeout(resolve, 100));
             document.getElementById('hd-backup-notice').innerHTML = t('hd.backupWarning');
             document.getElementById('hd-backup-warning').style.display = '';
             showToast(t('hd.generated'));
@@ -400,6 +406,71 @@
             btn.disabled = false;
             btn.textContent = t('hd.generateBtn');
         }
+    });
+
+    function buildWalletText() {
+        const d = _lastGeneratedWallet;
+        if (!d) return '';
+        const sep = '────────────────────────────────────────';
+        const lines = [
+            t('hd.walletInfoTitle'),
+            sep,
+            '',
+            '[1] ' + t('hd.step2'),
+            d.mnemonic,
+            '',
+            '[2] ' + t('hd.step3'),
+            'xprv: ' + d.master_xprv,
+            'xpub: ' + d.master_xpub,
+            '',
+            '[3] ' + t('hd.step5'),
+            d.private_key_wif,
+            '',
+            '[4] ' + t('hd.step6'),
+            d.public_key_hex,
+            '',
+            '[5] ' + t('hd.step7'),
+            d.address,
+            '',
+            sep,
+            t('hd.fileDisclaimer'),
+        ];
+        return lines.join('\n');
+    }
+
+    document.getElementById('hd-copy-btn').addEventListener('click', () => {
+        const text = buildWalletText();
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(t('hd.copied'));
+        }).catch(() => {
+            // Fallback for older browsers
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast(t('hd.copied'));
+        });
+    });
+
+    document.getElementById('hd-save-btn').addEventListener('click', () => {
+        const text = buildWalletText();
+        if (!text) return;
+        const filename = getLang() === 'ko' ? '크론코인 지갑정보.txt' : 'CronCoin Wallet Info.txt';
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(t('hd.saved'));
     });
 
     // ========================================================
