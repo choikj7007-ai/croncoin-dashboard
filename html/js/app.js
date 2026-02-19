@@ -951,41 +951,6 @@
     // 4. MINING
     // ========================================================
 
-    document.getElementById('mine-btn').addEventListener('click', async () => {
-        const nblocks = parseInt(document.getElementById('mine-count').value) || 1;
-        const address = document.getElementById('mine-address').value.trim();
-        const btn = document.getElementById('mine-btn');
-        btn.disabled = true;
-        btn.textContent = t('mining.mining');
-
-        try {
-            const data = await apiPost('mine', { nblocks, address: address || undefined });
-            const resultEl = document.getElementById('mine-result');
-            resultEl.innerHTML = `<div class="card-title">${escapeHtml(t('mining.minedResult', { count: data.blocks.length, address: data.address }))}</div>`;
-            data.blocks.forEach(hash => {
-                const link = document.createElement('span');
-                link.className = 'hash-link';
-                link.textContent = hash;
-                link.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tabContents.forEach(tc => tc.classList.remove('active'));
-                    document.querySelector('[data-tab="blocks"]').classList.add('active');
-                    document.getElementById('tab-blocks').classList.add('active');
-                    document.getElementById('block-search').value = hash;
-                    searchBlock();
-                });
-                resultEl.appendChild(link);
-            });
-            showToast(t('mining.minedToast', { count: data.blocks.length }));
-            loadMiningInfo();
-            updateStatusBar();
-        } catch (err) {
-            showToast(t('mining.error') + ': ' + err.message, true);
-        } finally {
-            btn.disabled = false;
-            btn.textContent = t('mining.mineBtn');
-        }
-    });
 
     async function loadMiningInfo() {
         try {
@@ -1268,32 +1233,16 @@
         }
     }
 
-    let _diceAutoMining = false;
-
     function startDicePolling() {
         if (_dicePollingTimer) clearInterval(_dicePollingTimer);
         _dicePollingTimer = setInterval(async () => {
-            if (_diceRevealing || _diceAutoMining) return;
+            if (_diceRevealing) return;
             try {
                 const info = await apiGet('blockchain');
                 if (info.blocks > _diceKnownHeight) {
                     const newBlock = await apiGet('blockheight/' + info.blocks);
                     _diceKnownHeight = info.blocks;
                     diceShowResult(newBlock);
-                } else if (_currentChain !== 'main') {
-                    // Auto-mine on non-mainnet when block interval (180s) exceeded
-                    const latestBlock = await apiGet('blockheight/' + info.blocks);
-                    const elapsed = Math.floor(Date.now() / 1000) - latestBlock.time;
-                    if (elapsed >= 180) {
-                        _diceAutoMining = true;
-                        try {
-                            await apiPost('mine', { nblocks: 1 });
-                        } catch (e) {
-                            // ignore mining errors
-                        } finally {
-                            _diceAutoMining = false;
-                        }
-                    }
                 }
             } catch (e) {
                 // ignore polling errors

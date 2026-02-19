@@ -131,7 +131,9 @@ def _parse_hdkeypath(path_str):
     return indices
 
 
-def _privkey_to_wif(key_bytes, testnet=True):
+def _privkey_to_wif(key_bytes, testnet=None):
+    if testnet is None:
+        testnet = not IS_MAINNET
     prefix = b"\xef" if testnet else b"\x80"
     return _b58encode_check(prefix + key_bytes + b"\x01")  # compressed
 
@@ -167,7 +169,7 @@ def _privkey_to_address_info(privkey_input):
     if len(privkey_input) == 64:
         try:
             key_bytes = bytes.fromhex(privkey_input)
-            wif = _privkey_to_wif(key_bytes, testnet=True)
+            wif = _privkey_to_wif(key_bytes)
             pubkey = _privkey_to_compressed_pubkey(key_bytes)
             hrp = _get_bech32_hrp()
             address = _pubkey_to_bech32_address(pubkey, hrp=hrp)
@@ -212,7 +214,7 @@ def derive_privkey_wif(xprv_b58, hdkeypath):
     key, chain_code = _parse_xprv(xprv_b58)
     for index in _parse_hdkeypath(hdkeypath):
         key, chain_code = _bip32_derive_child(key, chain_code, index)
-    return _privkey_to_wif(key, testnet=True)
+    return _privkey_to_wif(key)
 
 
 def _get_master_tprv():
@@ -271,9 +273,9 @@ def _seed_to_master_key(seed_bytes):
 
 
 def _encode_tprv(key, chain_code, depth=0, fingerprint=b"\x00\x00\x00\x00", child_num=0):
-    """Encode extended private key as tprv (testnet/regtest) base58check string."""
-    # tprv version: 0x04358394
-    version = b"\x04\x35\x83\x94"
+    """Encode extended private key as xprv (mainnet) or tprv (testnet) base58check string."""
+    # xprv version: 0x0488ADE4, tprv version: 0x04358394
+    version = b"\x04\x88\xAD\xE4" if IS_MAINNET else b"\x04\x35\x83\x94"
     payload = (
         version
         + bytes([depth])
@@ -286,9 +288,9 @@ def _encode_tprv(key, chain_code, depth=0, fingerprint=b"\x00\x00\x00\x00", chil
 
 
 def _encode_tpub(pubkey_bytes, chain_code, depth=0, fingerprint=b"\x00\x00\x00\x00", child_num=0):
-    """Encode extended public key as tpub (testnet/regtest) base58check string."""
-    # tpub version: 0x043587CF
-    version = b"\x04\x35\x87\xCF"
+    """Encode extended public key as xpub (mainnet) or tpub (testnet) base58check string."""
+    # xpub version: 0x0488B21E, tpub version: 0x043587CF
+    version = b"\x04\x88\xB2\x1E" if IS_MAINNET else b"\x04\x35\x87\xCF"
     payload = (
         version
         + bytes([depth])
@@ -444,8 +446,10 @@ def _convertbits(data, frombits, tobits, pad=True):
     return ret
 
 
-def _pubkey_to_bech32_address(pubkey_bytes, hrp="crnrt"):
+def _pubkey_to_bech32_address(pubkey_bytes, hrp=None):
     """Convert compressed pubkey to bech32 P2WPKH address."""
+    if hrp is None:
+        hrp = _get_bech32_hrp()
     witness_program = _hash160(pubkey_bytes)
     # witness version 0 + convertbits(20 bytes, 8→5)
     data5 = _convertbits(witness_program, 8, 5)
@@ -558,9 +562,9 @@ def _recover_from_mnemonic(mnemonic, passphrase="", derivation_path="m/84h/1h/0h
             "xpub": _encode_tpub(pub, chain, depth, fingerprint, idx),
         })
 
-    privkey_wif = _privkey_to_wif(key, testnet=True)
+    privkey_wif = _privkey_to_wif(key)
     pubkey = _privkey_to_compressed_pubkey(key)
-    address = _pubkey_to_bech32_address(pubkey, hrp="crnrt")
+    address = _pubkey_to_bech32_address(pubkey)
 
     return {
         "mnemonic": mnemonic,
@@ -594,7 +598,7 @@ def _recover_from_xpub(xpub_b58, child_path="0/0"):
     for idx in indices:
         current_pub, current_chain = _bip32_derive_child_pub(current_pub, current_chain, idx)
 
-    address = _pubkey_to_bech32_address(current_pub, hrp="crnrt")
+    address = _pubkey_to_bech32_address(current_pub)
 
     return {
         "xpub": xpub_b58,
@@ -657,13 +661,13 @@ def _full_hd_generate(entropy_bits=128, passphrase="", derivation_path="m/84h/1h
         })
 
     # Step 6: Private key (WIF)
-    privkey_wif = _privkey_to_wif(key, testnet=True)
+    privkey_wif = _privkey_to_wif(key)
 
     # Step 7: Public key (compressed)
     pubkey = _privkey_to_compressed_pubkey(key)
 
     # Step 8: Address (bech32 P2WPKH)
-    address = _pubkey_to_bech32_address(pubkey, hrp="crnrt")
+    address = _pubkey_to_bech32_address(pubkey)
 
     return {
         "entropy_hex": entropy.hex(),
@@ -679,13 +683,16 @@ def _full_hd_generate(entropy_bits=128, passphrase="", derivation_path="m/84h/1h
         "address": address,
     }
 
+NETWORK = os.environ.get("NETWORK", "testnet")
+IS_MAINNET = NETWORK == "mainnet"
+
 RPC_HOST = os.environ.get("RPC_HOST", "127.0.0.1")
-RPC_PORT = int(os.environ.get("RPC_PORT", "19332"))
+RPC_PORT = int(os.environ.get("RPC_PORT", "9332" if IS_MAINNET else "19332"))
 RPC_USER = os.environ.get("RPC_USER", "")
 RPC_PASSWORD = os.environ.get("RPC_PASSWORD", "")
 COOKIE_FILE = os.environ.get(
     "RPC_COOKIE",
-    os.path.expanduser("~/.croncoin/testnet3/.cookie"),
+    os.path.expanduser("~/.croncoin/.cookie" if IS_MAINNET else "~/.croncoin/testnet3/.cookie"),
 )
 LISTEN_PORT = int(os.environ.get("DASHBOARD_PORT", "5000"))
 WALLET_NAME = os.environ.get("WALLET_NAME", "default")
@@ -1016,7 +1023,7 @@ def xpub_balance(handler, match):
         for i in range(count):
             try:
                 child_pub, _ = _bip32_derive_child_pub(chain_pub, chain_chain, i)
-                addr = _pubkey_to_bech32_address(child_pub, hrp="crnrt")
+                addr = _pubkey_to_bech32_address(child_pub)
                 path_str = f"{chain_idx}/{i}"
                 addr_map[addr] = path_str
                 scan_descriptors.append(f"addr({addr})")
@@ -1166,24 +1173,6 @@ def get_richlist(handler, match):
 
 
 # --- POST endpoints ---
-
-@route("POST", r"/api/mine")
-def mine_blocks(handler, match):
-    body = _read_body(handler)
-    if body is None:
-        return error_response(handler, "Invalid JSON body", 400)
-    nblocks = body.get("nblocks", 1)
-    address = body.get("address", "")
-    if not address:
-        addr, err = rpc_call("getnewaddress")
-        if err:
-            return error_response(handler, err["message"])
-        address = addr
-    result, err = rpc_call("generatetoaddress", [int(nblocks), address])
-    if err:
-        return error_response(handler, err["message"])
-    json_response(handler, {"blocks": result, "address": address})
-
 
 @route("POST", r"/api/wallet/send")
 def send_coins(handler, match):

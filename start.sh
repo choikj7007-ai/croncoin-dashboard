@@ -1,5 +1,6 @@
 #!/bin/bash
 # CronCoin Dashboard - Start Script
+# Network config is read from mining.conf (NETWORK=testnet|mainnet)
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -7,8 +8,28 @@ CRONCOIN_DIR="$HOME/croncoin-source/build/bin"
 DATA_DIR="$HOME/.croncoin"
 WWW_DIR="$HOME/www/html"
 NGINX_CONF="/etc/nginx/conf.d/croncoin.conf"
+CONF="$SCRIPT_DIR/mining.conf"
 
-echo "=== CronCoin Dashboard Setup ==="
+# Load network config
+if [ -f "$CONF" ]; then
+    source "$CONF"
+fi
+
+if [ "$NETWORK" = "mainnet" ]; then
+    NET_OPTS=""
+    RPC_PORT=9332
+    COOKIE="$HOME/.croncoin/.cookie"
+    NET_LABEL="MAINNET"
+else
+    NET_OPTS="-testnet"
+    RPC_PORT=19332
+    COOKIE="$HOME/.croncoin/testnet3/.cookie"
+    NET_LABEL="TESTNET"
+fi
+
+CLI_OPTS="$NET_OPTS -rpcport=$RPC_PORT"
+
+echo "=== CronCoin Dashboard Setup ($NET_LABEL) ==="
 
 # 1. Sync dashboard files to www directory
 echo "[www] Syncing dashboard files to $WWW_DIR..."
@@ -22,7 +43,6 @@ if ! grep -q 'location /api/' "$NGINX_CONF" 2>/dev/null; then
     sudo sed -i '/location \/ {/,/}/ {
         /}/a\\n       location /api/ {\n           proxy_pass http://127.0.0.1:5000;\n           proxy_set_header Host $host;\n           proxy_set_header X-Real-IP $remote_addr;\n           proxy_read_timeout 60s;\n       }
     }' "$NGINX_CONF"
-    # Only patch the first server block (www.croncoin.org)
     echo "[nginx] Config updated."
 else
     echo "[nginx] /api/ proxy already configured."
@@ -37,8 +57,8 @@ echo "[nginx] OK"
 
 # 4. Start croncoind if not running
 if ! pgrep -x croncoind > /dev/null; then
-    echo "[croncoind] Starting testnet daemon..."
-    "$CRONCOIN_DIR/croncoind" -testnet -daemon -txindex \
+    echo "[croncoind] Starting $NET_LABEL daemon..."
+    "$CRONCOIN_DIR/croncoind" $NET_OPTS -daemon -txindex \
         -fallbackfee=0.01 \
         -rpcbind=127.0.0.1 \
         -rpcallowip=127.0.0.1
@@ -49,9 +69,9 @@ else
 fi
 
 # 5. Create default wallet if none exists
-if ! "$CRONCOIN_DIR/croncoin-cli" -testnet listwallets 2>/dev/null | grep -q "default"; then
-    echo "[wallet] Creating default wallet..."
-    "$CRONCOIN_DIR/croncoin-cli" -testnet createwallet "default" 2>/dev/null || true
+if ! "$CRONCOIN_DIR/croncoin-cli" $CLI_OPTS listwallets 2>/dev/null | grep -q "${WALLET:-default}"; then
+    echo "[wallet] Creating ${WALLET:-default} wallet..."
+    "$CRONCOIN_DIR/croncoin-cli" $CLI_OPTS createwallet "${WALLET:-default}" 2>/dev/null || true
 fi
 
 # 6. Start the Python API backend
@@ -62,12 +82,14 @@ if pgrep -f "server.py" > /dev/null; then
     sleep 1
 fi
 
-python3 "$SCRIPT_DIR/server.py" &
+NETWORK="$NETWORK" RPC_PORT="$RPC_PORT" RPC_COOKIE="$COOKIE" \
+    WALLET_NAME="${WALLET:-default}" \
+    python3 "$SCRIPT_DIR/server.py" &
 API_PID=$!
 echo "[api] Backend PID: $API_PID"
 
 echo ""
-echo "=== CronCoin Dashboard Ready ==="
+echo "=== CronCoin Dashboard Ready ($NET_LABEL) ==="
 echo "  Dashboard: http://www.croncoin.org/"
 echo "  API:       http://www.croncoin.org/api/blockchain"
 echo "  Backend:   http://127.0.0.1:5000"
