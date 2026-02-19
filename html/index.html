@@ -124,51 +124,92 @@
         </div>
     </div>
 
-    <!-- 3. Wallet -->
+    <!-- 3. Wallet (HD Key Generation Flow) -->
     <div class="tab-content" id="tab-wallet">
-        <!-- Step 1: Ask if user has master seed -->
-        <div class="card" id="wallet-step1">
-            <div class="card-title" data-i18n="wallet.newAddress">Create Coin Account</div>
-            <div class="guide-notice" id="step1-notice"></div>
-            <div class="address-guide-actions">
-                <button class="btn btn-warning" id="seed-create-btn" data-i18n="seed.createBtn">Create Master Seed</button>
-                <button class="btn btn-primary" id="seed-have-btn" data-i18n="seed.haveBtn">I already have one</button>
+        <div class="card">
+            <div class="card-title" data-i18n="wallet.newAddress">Coin Wallet</div>
+            <div class="guide-notice" id="wallet-guide-notice"></div>
+            <div class="address-guide-actions" id="wallet-generate-actions">
+                <button class="btn btn-warning" id="hd-generate-btn" data-i18n="hd.generateBtn">Generate New Wallet</button>
             </div>
         </div>
 
-        <!-- Step 2: Seed backup -->
-        <div class="card" id="wallet-step2" style="display:none">
-            <div class="card-title" data-i18n="seed.title">HD Seed Backup</div>
-            <div class="guide-notice seed-warning" id="seed-warning-content"></div>
-            <div id="seed-display"></div>
-            <div class="address-guide-actions">
-                <button class="btn btn-primary" id="seed-confirmed-btn" data-i18n="seed.confirmedBtn">I have backed up the seed</button>
+        <!-- HD Flow Steps (progressively revealed) -->
+        <div id="hd-flow-container" style="display:none">
+            <!-- Step 1: Entropy -->
+            <div class="card hd-step" id="hd-step-1">
+                <div class="hd-step-header">
+                    <span class="hd-step-num">1</span>
+                    <span class="hd-step-title" data-i18n="hd.step1">Entropy</span>
+                    <span class="hd-step-arrow">&darr;</span>
+                </div>
+                <div class="hd-step-desc" data-i18n="hd.step1Desc">128-bit random number (source of all security)</div>
+                <div class="hd-step-value mono-text" id="hd-entropy"></div>
+            </div>
+            <!-- Step 2: Mnemonic -->
+            <div class="card hd-step" id="hd-step-2">
+                <div class="hd-step-header">
+                    <span class="hd-step-num">2</span>
+                    <span class="hd-step-title" data-i18n="hd.step2">Mnemonic (Seed Phrase)</span>
+                    <span class="hd-step-arrow">&darr;</span>
+                </div>
+                <div class="hd-step-desc" data-i18n="hd.step2Desc">12 words derived from entropy + checksum (BIP39)</div>
+                <div class="hd-step-value" id="hd-mnemonic"></div>
+            </div>
+            <!-- Step 3: Master Key -->
+            <div class="card hd-step" id="hd-step-3">
+                <div class="hd-step-header">
+                    <span class="hd-step-num">3</span>
+                    <span class="hd-step-title" data-i18n="hd.step3">Master Key</span>
+                    <span class="hd-step-arrow">&darr;</span>
+                </div>
+                <div class="hd-step-desc" data-i18n="hd.step3Desc">Mnemonic + HMAC-SHA512 → two keys generated simultaneously</div>
+                <div id="hd-master-keys"></div>
+            </div>
+            <!-- Step 4: HD Derivation -->
+            <div class="card hd-step" id="hd-step-4">
+                <div class="hd-step-header">
+                    <span class="hd-step-num">4</span>
+                    <span class="hd-step-title" data-i18n="hd.step4">HD Derivation</span>
+                    <span class="hd-step-arrow">&darr;</span>
+                </div>
+                <div class="hd-step-desc" data-i18n="hd.step4Desc">xprv derivation → child xprv + xpub / xpub derivation → child xpub only</div>
+                <div id="hd-derivation-chain"></div>
+            </div>
+            <!-- Step 5: Private Key -->
+            <div class="card hd-step" id="hd-step-5">
+                <div class="hd-step-header">
+                    <span class="hd-step-num">5</span>
+                    <span class="hd-step-title" data-i18n="hd.step5">Private Key</span>
+                    <span class="hd-step-arrow">&darr;</span>
+                </div>
+                <div class="hd-step-desc" data-i18n="hd.step5Desc">WIF private key extracted from the final child xprv</div>
+                <div class="hd-step-value mono-text privkey-text" id="hd-privkey"></div>
+            </div>
+            <!-- Step 6: Public Key -->
+            <div class="card hd-step" id="hd-step-6">
+                <div class="hd-step-header">
+                    <span class="hd-step-num">6</span>
+                    <span class="hd-step-title" data-i18n="hd.step6">Public Key</span>
+                    <span class="hd-step-arrow">&darr;</span>
+                </div>
+                <div class="hd-step-desc" data-i18n="hd.step6Desc">Compressed public key from secp256k1 elliptic curve multiplication</div>
+                <div class="hd-step-value mono-text" id="hd-pubkey"></div>
+            </div>
+            <!-- Step 7: Address -->
+            <div class="card hd-step" id="hd-step-7">
+                <div class="hd-step-header">
+                    <span class="hd-step-num">7</span>
+                    <span class="hd-step-title" data-i18n="hd.step7">Address</span>
+                </div>
+                <div class="hd-step-desc" data-i18n="hd.step7Desc">Public Key → SHA-256 → RIPEMD-160 → Bech32 encoding</div>
+                <div class="hd-step-value address-display" id="hd-address"></div>
             </div>
         </div>
 
-        <!-- Step 2-B: Verify existing seed -->
-        <div class="card" id="wallet-step2b" style="display:none">
-            <div class="card-title" data-i18n="seed.verifyTitle">Verify Master Seed</div>
-            <div class="guide-notice" id="seed-verify-notice"></div>
-            <div class="form-group" style="margin-top:16px">
-                <label data-i18n="seed.inputLabel">Enter your master seed (tprv...)</label>
-                <textarea id="seed-input" class="seed-input-field" rows="3" placeholder="tprv..."></textarea>
-            </div>
-            <div id="seed-verify-result"></div>
-            <div class="address-guide-actions">
-                <button class="btn btn-primary" id="seed-verify-btn" data-i18n="seed.verifyBtn">Verify</button>
-                <button class="btn btn-ghost" id="seed-verify-back-btn" data-i18n="seed.backBtn">Back</button>
-            </div>
-        </div>
-
-        <!-- Step 3: Create account -->
-        <div class="card" id="wallet-step3" style="display:none">
-            <div class="card-title" data-i18n="wallet.newAddress">Create Coin Account</div>
-            <div class="guide-notice" id="address-guide-content"></div>
-            <div class="address-guide-actions">
-                <button class="btn btn-primary" id="confirm-generate-btn" data-i18n="wallet.confirmGenerate">Create Account</button>
-            </div>
-            <div id="new-address-display"></div>
+        <!-- Warning notice after generation -->
+        <div class="card" id="hd-backup-warning" style="display:none">
+            <div class="guide-notice seed-warning" id="hd-backup-notice"></div>
         </div>
     </div>
 

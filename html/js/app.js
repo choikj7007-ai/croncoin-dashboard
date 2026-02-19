@@ -294,102 +294,111 @@
     }
 
     // ========================================================
-    // 3. WALLET (Create Account) - 3-step flow
+    // 3. WALLET (HD Key Generation Flow)
     // ========================================================
 
-    function walletShowStep(step) {
-        document.getElementById('wallet-step1').style.display = step === 1 ? '' : 'none';
-        document.getElementById('wallet-step2').style.display = step === 2 ? '' : 'none';
-        document.getElementById('wallet-step2b').style.display = step === '2b' ? '' : 'none';
-        document.getElementById('wallet-step3').style.display = step === 3 ? '' : 'none';
-    }
-
     function loadWalletGuide() {
-        document.getElementById('step1-notice').innerHTML = t('seed.askHaveSeed');
-        document.getElementById('new-address-display').innerHTML = '';
-        walletShowStep(1);
+        document.getElementById('wallet-guide-notice').innerHTML = t('hd.guideNotice');
+        document.getElementById('hd-flow-container').style.display = 'none';
+        document.getElementById('hd-backup-warning').style.display = 'none';
+        document.getElementById('wallet-generate-actions').style.display = '';
+        // Clear previous values
+        for (let i = 1; i <= 7; i++) {
+            const stepEl = document.getElementById('hd-step-' + i);
+            if (stepEl) stepEl.style.display = 'none';
+        }
     }
 
-    // "마스터 시드 생성" → Step 2: show seed backup
-    document.getElementById('seed-create-btn').addEventListener('click', async () => {
-        try {
-            const data = await apiGet('wallet/seed');
-            document.getElementById('seed-warning-content').innerHTML = t('seed.warning');
-            let html = `<div class="key-info-group seed-info">`;
-            html += `<div class="key-info-row"><span class="key-label">${t('seed.masterKey')}:</span><span class="key-value mono-text privkey-text">${escapeHtml(data.master_key)}</span></div>`;
-            html += `<div class="key-info-row"><span class="key-label">${t('seed.walletName')}:</span><span class="key-value">${escapeHtml(data.wallet_name)}</span></div>`;
-            html += `<div class="key-info-row"><span class="key-label">${t('seed.descriptors')}:</span>`;
-            html += `<div class="seed-descriptors">`;
-            data.descriptors.forEach(d => {
-                html += `<div class="key-value mono-text seed-desc-item">${escapeHtml(d)}</div>`;
-            });
-            html += `</div></div></div>`;
-            document.getElementById('seed-display').innerHTML = html;
-            walletShowStep(2);
-        } catch (err) {
-            showToast(t('error') + ': ' + err.message, true);
+    function renderKeyPair(xprv, xpub) {
+        return `<div class="keypair-box">
+            <div class="keypair-row"><span class="keypair-label">xprv</span><span class="keypair-value mono-text privkey-text">${escapeHtml(xprv)}</span></div>
+            <div class="keypair-row"><span class="keypair-label">xpub</span><span class="keypair-value mono-text">${escapeHtml(xpub)}</span></div>
+        </div>`;
+    }
+
+    function renderDerivationChain(chain) {
+        // chain[0] = master (m), skip it (shown in step 3)
+        // chain[1..N] = each derivation level
+        let html = `<div class="derivation-chain">`;
+        for (let i = 1; i < chain.length; i++) {
+            const level = chain[i];
+            const isLast = (i === chain.length - 1);
+            const connector = i < chain.length - 1 ? 'has-next' : '';
+            html += `<div class="derive-level ${connector}">
+                <div class="derive-path-label"><span class="derive-connector">${isLast ? '└' : '├'}</span> <strong>${escapeHtml(level.path)}</strong></div>
+                <div class="derive-keys">
+                    <div class="keypair-row"><span class="keypair-label">xprv</span><span class="keypair-value mono-text privkey-text">${escapeHtml(level.xprv)}</span></div>
+                    <div class="keypair-row"><span class="keypair-label">xpub</span><span class="keypair-value mono-text">${escapeHtml(level.xpub)}</span></div>
+                </div>
+            </div>`;
         }
-    });
+        html += `</div>`;
+        html += `<div class="derive-note">${t('hd.deriveNote')}</div>`;
+        return html;
+    }
 
-    // "시드를 백업했습니다" → Step 3
-    document.getElementById('seed-confirmed-btn').addEventListener('click', () => {
-        document.getElementById('address-guide-content').innerHTML = t('wallet.guideContent');
-        document.getElementById('new-address-display').innerHTML = '';
-        walletShowStep(3);
-    });
+    document.getElementById('hd-generate-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('hd-generate-btn');
+        btn.disabled = true;
+        btn.textContent = t('hd.generating');
 
-    // "이미 가지고 있음" → Step 2-B: verify seed
-    document.getElementById('seed-have-btn').addEventListener('click', () => {
-        document.getElementById('seed-verify-notice').innerHTML = t('seed.verifyNotice');
-        document.getElementById('seed-input').value = '';
-        document.getElementById('seed-verify-result').innerHTML = '';
-        walletShowStep('2b');
-    });
-
-    // "뒤로" → Step 1
-    document.getElementById('seed-verify-back-btn').addEventListener('click', () => {
-        walletShowStep(1);
-    });
-
-    // "확인" → verify seed against wallet
-    document.getElementById('seed-verify-btn').addEventListener('click', async () => {
-        const input = document.getElementById('seed-input').value.trim();
-        if (!input) {
-            showToast(t('seed.inputEmpty'), true);
-            return;
-        }
         try {
-            const data = await apiGet('wallet/seed');
-            if (input === data.master_key) {
-                document.getElementById('seed-verify-result').innerHTML =
-                    `<div class="verify-success">${t('seed.verifySuccess')}</div>`;
-                setTimeout(() => {
-                    document.getElementById('address-guide-content').innerHTML = t('wallet.guideContent');
-                    document.getElementById('new-address-display').innerHTML = '';
-                    walletShowStep(3);
-                }, 1500);
-            } else {
-                document.getElementById('seed-verify-result').innerHTML =
-                    `<div class="verify-fail">${t('seed.verifyFail')}</div>`;
+            const data = await apiPost('wallet/generate', {});
+
+            // Show the flow container
+            document.getElementById('hd-flow-container').style.display = 'block';
+
+            // Progressively reveal each step with delay
+            const steps = [
+                { id: 1, content: () => {
+                    document.getElementById('hd-entropy').textContent = data.entropy_hex;
+                }},
+                { id: 2, content: () => {
+                    const words = data.mnemonic.split(' ');
+                    let html = '<div class="mnemonic-grid">';
+                    words.forEach((w, i) => {
+                        html += `<div class="mnemonic-word"><span class="word-num">${i + 1}</span><span class="word-text">${escapeHtml(w)}</span></div>`;
+                    });
+                    html += '</div>';
+                    document.getElementById('hd-mnemonic').innerHTML = html;
+                }},
+                { id: 3, content: () => {
+                    document.getElementById('hd-master-keys').innerHTML = renderKeyPair(data.master_xprv, data.master_xpub);
+                }},
+                { id: 4, content: () => {
+                    document.getElementById('hd-derivation-chain').innerHTML = renderDerivationChain(data.derivation_chain);
+                }},
+                { id: 5, content: () => {
+                    document.getElementById('hd-privkey').textContent = data.private_key_wif;
+                }},
+                { id: 6, content: () => {
+                    document.getElementById('hd-pubkey').textContent = data.public_key_hex;
+                }},
+                { id: 7, content: () => {
+                    document.getElementById('hd-address').textContent = data.address;
+                }},
+            ];
+
+            for (let i = 0; i < steps.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, i === 0 ? 100 : 300));
+                const step = steps[i];
+                const stepEl = document.getElementById('hd-step-' + step.id);
+                step.content();
+                stepEl.style.display = '';
+                stepEl.style.animationDelay = '0s';
             }
-        } catch (err) {
-            showToast(t('error') + ': ' + err.message, true);
-        }
-    });
 
-    // Step 3: actually create account
-    document.getElementById('confirm-generate-btn').addEventListener('click', async () => {
-        try {
-            const data = await apiGet('wallet/newaddress');
-            let html = `<div class="key-info-group">`;
-            html += `<div class="key-info-row"><span class="key-label">${t('wallet.addressLabel')}:</span><span class="key-value address-display">${escapeHtml(data.address)}</span></div>`;
-            if (data.pubkey) html += `<div class="key-info-row"><span class="key-label">${t('wallet.publicKey')}:</span><span class="key-value mono-text">${escapeHtml(data.pubkey)}</span></div>`;
-            if (data.privkey) html += `<div class="key-info-row"><span class="key-label">${t('wallet.privateKey')}:</span><span class="key-value mono-text privkey-text">${escapeHtml(data.privkey)}</span></div>`;
-            html += `</div>`;
-            document.getElementById('new-address-display').innerHTML = html;
-            showToast(t('wallet.addressGenerated'));
+            // Show backup warning after all steps
+            await new Promise(resolve => setTimeout(resolve, 400));
+            document.getElementById('hd-backup-notice').innerHTML = t('hd.backupWarning');
+            document.getElementById('hd-backup-warning').style.display = '';
+            showToast(t('hd.generated'));
+
         } catch (err) {
             showToast(t('error') + ': ' + err.message, true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = t('hd.generateBtn');
         }
     });
 
