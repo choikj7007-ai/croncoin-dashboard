@@ -1208,10 +1208,22 @@ def privkey_info(handler, match):
     if err:
         return error_response(handler, err.get("message", "scantxoutset failed"))
 
+    # Separate spendable vs pending (immature coinbase needs 100 confirmations)
+    COINBASE_MATURITY = 100
+    spendable = 0.0
+    pending = 0.0
+    for u in result.get("unspents", []):
+        if u.get("coinbase") and u.get("confirmations", 0) < COINBASE_MATURITY:
+            pending += u["amount"]
+        else:
+            spendable += u["amount"]
+
     json_response(handler, {
         "address": address,
         "pubkey_hex": info["pubkey_hex"],
         "balance": result.get("total_amount", 0),
+        "spendable": round(spendable, 8),
+        "pending": round(pending, 8),
         "utxo_count": len(result.get("unspents", [])),
     })
 
@@ -1279,8 +1291,11 @@ def send_privkey(handler, match):
     if err:
         return error_response(handler, f"createrawtransaction failed: {err.get('message', '')}")
 
-    # 5. Sign with WIF key (internally converted from hex if needed)
-    signed, err = rpc_call("signrawtransactionwithkey", [raw_tx, [wif_key]])
+    # 5. Sign with WIF key — provide prevtxs for segwit inputs
+    prevtxs = [{"txid": u["txid"], "vout": u["vout"],
+                "scriptPubKey": u["scriptPubKey"], "amount": u["amount"]}
+               for u in selected]
+    signed, err = rpc_call("signrawtransactionwithkey", [raw_tx, [wif_key], prevtxs])
     if err:
         return error_response(handler, f"signrawtransactionwithkey failed: {err.get('message', '')}")
     if not signed.get("complete"):

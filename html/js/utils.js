@@ -1,7 +1,7 @@
 /* CronCoin Dashboard - Utility Functions */
 
 const COIN = 1000;
-const HALVING_INTERVAL_REGTEST = 150;
+const HALVING_INTERVAL = 175000;
 const BASE_REWARD = 600000; // CRN
 
 /**
@@ -132,7 +132,7 @@ function formatBytes(bytes) {
  * Calculate current block reward for regtest.
  */
 function getBlockReward(height) {
-    const halvings = Math.floor(height / HALVING_INTERVAL_REGTEST);
+    const halvings = Math.floor(height / HALVING_INTERVAL);
     if (halvings >= 64) return 0;
     return BASE_REWARD / Math.pow(2, halvings);
 }
@@ -145,7 +145,7 @@ function getTotalSupply(height) {
     let h = 0;
     let reward = BASE_REWARD;
     while (h < height && reward > 0) {
-        const nextHalving = (Math.floor(h / HALVING_INTERVAL_REGTEST) + 1) * HALVING_INTERVAL_REGTEST;
+        const nextHalving = (Math.floor(h / HALVING_INTERVAL) + 1) * HALVING_INTERVAL;
         const blocksAtReward = Math.min(nextHalving, height) - h;
         total += blocksAtReward * reward;
         h += blocksAtReward;
@@ -159,6 +159,37 @@ function getTotalSupply(height) {
  */
 function formatNumber(n) {
     return Number(n).toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+}
+
+/**
+ * Wrap decimal point and fractional digits in a dim span.
+ */
+function dimDecimal(str) {
+    const idx = str.indexOf('.');
+    if (idx === -1) return escapeHtml(str);
+    return escapeHtml(str.substring(0, idx)) + '<span class="dec">' + escapeHtml(str.substring(idx)) + '</span>';
+}
+
+/**
+ * Convert number to Korean readable string (억, 만 units).
+ * e.g. 1240208322.232 → "12억 4020만 8322.232"
+ * Returns empty string if value is 0.
+ */
+function toKoreanNumber(n) {
+    n = Number(n);
+    if (n === 0) return '';
+    const neg = n < 0;
+    if (neg) n = -n;
+    const intPart = Math.floor(n);
+    const decStr = n % 1 === 0 ? '' : ('.' + n.toFixed(8).split('.')[1].replace(/0+$/, ''));
+    const parts = [];
+    const eok = Math.floor(intPart / 100000000);
+    const man = Math.floor((intPart % 100000000) / 10000);
+    const rest = intPart % 10000;
+    if (eok > 0) parts.push(eok.toLocaleString('en-US') + '억');
+    if (man > 0) parts.push(man.toLocaleString('en-US') + '만');
+    if (rest > 0 || parts.length === 0) parts.push(String(rest));
+    return (neg ? '-' : '') + parts.join(' ') + decStr;
 }
 
 /**

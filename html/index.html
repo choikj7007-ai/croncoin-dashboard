@@ -10,16 +10,15 @@
 
 <!-- Header & Tabs -->
 <div class="header">
-    <div class="logo">CronCoin <span>Dashboard</span> <span class="chain-badge" id="chain-badge"></span></div>
+    <a class="logo" href="/" data-tab="blocks">CronCoin <span>Dashboard</span> <span class="chain-badge" id="chain-badge"></span></a>
     <div class="tabs">
-        <button class="tab active" data-tab="blocks" data-i18n="tab.blocks">Block Explorer</button>
-        <button class="tab" data-tab="transactions" data-i18n="tab.transactions">Transactions</button>
-        <button class="tab" data-tab="wallet" data-i18n="tab.wallet">Create Wallet</button>
-        <button class="tab" data-tab="send" data-i18n="tab.send">Send CronCoin</button>
-        <button class="tab" data-tab="richlist" data-i18n="tab.richlist">Rich List</button>
-        <button class="tab" data-tab="network" data-i18n="tab.network">Network</button>
-        <button class="tab" data-tab="dice" data-i18n="tab.dice">Dice</button>
-        <button class="tab" data-tab="guide" data-i18n="tab.guide">Guide</button>
+        <a class="tab active" href="#blocks" data-tab="blocks" data-i18n="tab.blocks">Block Explorer</a>
+        <a class="tab" href="#wallet" data-tab="wallet" data-i18n="tab.wallet">Create Wallet</a>
+        <a class="tab" href="#send" data-tab="send" data-i18n="tab.send">Send CronCoin</a>
+        <a class="tab" href="#richlist" data-tab="richlist" data-i18n="tab.richlist">Rich List</a>
+        <a class="tab" href="#network" data-tab="network" data-i18n="tab.network">Network</a>
+        <a class="tab" href="#dice" data-tab="dice" data-i18n="tab.dice">Dice</a>
+        <a class="tab" href="#guide" data-tab="guide" data-i18n="tab.guide">Guide</a>
     </div>
     <button class="lang-btn" id="lang-btn" title="Switch language">EN | 한</button>
 </div>
@@ -33,6 +32,10 @@
         <div class="search-bar">
             <input type="text" id="block-search" data-i18n-placeholder="block.searchPlaceholder" placeholder="Search by block hash or height...">
             <button class="btn btn-primary" id="block-search-btn" data-i18n="search">Search</button>
+        </div>
+        <div class="search-bar" style="margin-top:8px">
+            <input type="text" id="tx-search" data-i18n-placeholder="tx.searchPlaceholder" placeholder="Search by transaction ID...">
+            <button class="btn btn-primary" id="tx-search-btn" data-i18n="search">Search</button>
         </div>
 
         <!-- Block Detail (hidden by default) -->
@@ -56,22 +59,7 @@
             </div>
         </div>
 
-        <!-- Recent Blocks -->
-        <div class="card">
-            <div class="card-title" data-i18n="block.recentBlocks">Recent Blocks</div>
-            <div id="recent-blocks" class="block-list">
-                <div class="loading" data-i18n="loading">Loading...</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. Transaction Explorer -->
-    <div class="tab-content" id="tab-transactions">
-        <div class="search-bar">
-            <input type="text" id="tx-search" data-i18n-placeholder="tx.searchPlaceholder" placeholder="Search by transaction ID...">
-            <button class="btn btn-primary" id="tx-search-btn" data-i18n="search">Search</button>
-        </div>
-
+        <!-- Transaction Detail (hidden by default) -->
         <div id="tx-detail" class="card" style="display:none">
             <div class="card-title" data-i18n="tx.detail">Transaction Detail</div>
             <div class="info-grid" id="tx-detail-info"></div>
@@ -106,19 +94,11 @@
             </div>
         </div>
 
+        <!-- Recent Blocks -->
         <div class="card">
-            <div class="card-title" data-i18n="wallet.recentTx">Recent Transactions</div>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr>
-                        <th data-i18n="th.txid">TxID</th>
-                        <th data-i18n="th.category">Category</th>
-                        <th data-i18n="th.amount">Amount</th>
-                        <th data-i18n="th.confirmations">Confirmations</th>
-                        <th data-i18n="th.time">Time</th>
-                    </tr></thead>
-                    <tbody id="wallet-tx-list"></tbody>
-                </table>
+            <div class="card-title" data-i18n="block.recentBlocks">Recent Blocks</div>
+            <div id="recent-blocks" class="block-list">
+                <div class="loading" data-i18n="loading">Loading...</div>
             </div>
         </div>
     </div>
@@ -278,9 +258,19 @@
         <div class="card">
             <div class="card-title" data-i18n="send.title">Send CRN</div>
             <div class="form-row">
-                <div class="form-group" style="flex:1 1 100%">
+                <div class="form-group">
                     <label data-i18n="send.privkeyLabel">Private Key (Sender)</label>
                     <input type="password" id="send-privkey" data-i18n-placeholder="send.privkeyPlaceholder" placeholder="Enter your private key..." autocomplete="off">
+                </div>
+                <div class="form-group" style="flex:0.5">
+                    <label data-i18n="send.spendable">전송가능(CRN)</label>
+                    <div id="send-spendable" class="bal-display" style="color:var(--success)"></div>
+                    <div id="send-spendable-kr" class="kr-note"></div>
+                </div>
+                <div class="form-group" style="flex:0.5">
+                    <label data-i18n="send.pending">대기(CRN)</label>
+                    <div id="send-pending" class="bal-display" style="color:var(--warning)"></div>
+                    <div id="send-pending-kr" class="kr-note"></div>
                 </div>
             </div>
             <div id="send-sender-info" class="info-grid" style="display:none"></div>
@@ -292,6 +282,7 @@
                 <div class="form-group">
                     <label data-i18n="send.amount">Amount (CRN)</label>
                     <input type="number" id="send-amount" step="0.001" min="0.001" placeholder="0.000">
+                    <div id="send-amount-kr" class="kr-note"></div>
                 </div>
             </div>
             <button class="btn btn-primary" id="send-btn" data-i18n="send.sendBtn">Send</button>
@@ -322,14 +313,6 @@
 
     <!-- 6. Network Status -->
     <div class="tab-content" id="tab-network">
-        <div class="card">
-            <div class="balance-display">
-                <div class="balance-label" data-i18n="mining.miningBalance">Mining Balance</div>
-                <div class="balance-amount" id="mining-balance">—</div>
-            </div>
-            <div class="info-grid" id="mining-balance-grid"></div>
-        </div>
-
         <div class="card">
             <div class="card-title" data-i18n="mining.info">Mining Info</div>
             <div class="info-grid" id="mining-info-grid"></div>

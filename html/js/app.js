@@ -14,29 +14,31 @@
     });
 
     // --- Tab Navigation ---
-    const tabs = document.querySelectorAll('.tab');
+    const tabs = document.querySelectorAll('.tabs .tab');
     const tabContents = document.querySelectorAll('.tab-content');
 
     function switchTab(target) {
         tabs.forEach(t => t.classList.remove('active'));
         tabContents.forEach(tc => tc.classList.remove('active'));
-        const tabBtn = document.querySelector('[data-tab="' + target + '"]');
+        const tabBtn = document.querySelector('.tabs [data-tab="' + target + '"]');
         if (tabBtn) tabBtn.classList.add('active');
         const tabPanel = document.getElementById('tab-' + target);
         if (tabPanel) tabPanel.classList.add('active');
-        location.hash = target;
+        history.replaceState(null, '', '#' + target);
         onTabActivated(target);
     }
 
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+        tab.addEventListener('click', e => { e.preventDefault(); switchTab(tab.dataset.tab); });
     });
+
+    // Logo click → go to blocks tab (home)
+    document.querySelector('.logo').addEventListener('click', e => { e.preventDefault(); switchTab('blocks'); });
 
     function onTabActivated(tabName) {
         if (tabName !== 'dice') stopDicePolling();
         switch (tabName) {
             case 'blocks': loadRecentBlocks(); break;
-            case 'transactions': loadRecentTxList(); break;
             case 'wallet': loadWalletGuide(); break;
             case 'richlist': loadRichList(); break;
             case 'network': loadMiningInfo(); loadNetworkTab(); break;
@@ -203,11 +205,11 @@
     }
 
     async function viewTransaction(txid) {
-        // Switch to transactions tab
+        // Switch to blocks tab (explorer)
         tabs.forEach(t => t.classList.remove('active'));
         tabContents.forEach(tc => tc.classList.remove('active'));
-        document.querySelector('[data-tab="transactions"]').classList.add('active');
-        document.getElementById('tab-transactions').classList.add('active');
+        document.querySelector('[data-tab="blocks"]').classList.add('active');
+        document.getElementById('tab-blocks').classList.add('active');
 
         document.getElementById('tx-search').value = txid;
 
@@ -858,22 +860,42 @@
         _privkeyDebounceTimer = setTimeout(async () => {
             const privkey = document.getElementById('send-privkey').value.trim();
             const infoEl = document.getElementById('send-sender-info');
+            const spendEl = document.getElementById('send-spendable');
+            const pendEl = document.getElementById('send-pending');
+            const spKrEl = document.getElementById('send-spendable-kr');
+            const peKrEl = document.getElementById('send-pending-kr');
             if (!privkey || privkey.length < 50) {
                 infoEl.style.display = 'none';
+                spendEl.innerHTML = '';
+                pendEl.innerHTML = '';
+                spKrEl.textContent = '';
+                peKrEl.textContent = '';
                 return;
             }
             try {
                 const data = await apiPost('wallet/privkey-info', { privkey });
+                spendEl.innerHTML = dimDecimal(formatNumber(data.spendable));
+                pendEl.innerHTML = dimDecimal(formatNumber(data.pending));
+                spKrEl.textContent = toKoreanNumber(data.spendable);
+                peKrEl.textContent = toKoreanNumber(data.pending);
                 infoEl.style.display = '';
                 renderInfoGrid('send-sender-info', [
                     { label: t('send.senderAddress'), value: data.address, cls: 'mono' },
-                    { label: t('send.senderBalance'), value: formatCRN(data.balance) },
                 ]);
             } catch (err) {
+                spendEl.innerHTML = '';
+                pendEl.innerHTML = '';
+                spKrEl.textContent = '';
+                peKrEl.textContent = '';
                 infoEl.style.display = '';
                 infoEl.innerHTML = `<div class="info-item"><span class="info-label">${escapeHtml(t('send.invalidPrivkey'))}</span><span class="info-value" style="color:var(--error)">${escapeHtml(err.message)}</span></div>`;
             }
         }, 500);
+    });
+
+    document.getElementById('send-amount').addEventListener('input', function() {
+        const v = parseFloat(this.value);
+        document.getElementById('send-amount-kr').textContent = (v && v > 0) ? toKoreanNumber(v) : '';
     });
 
     document.getElementById('send-btn').addEventListener('click', async () => {
@@ -922,29 +944,6 @@
     });
 
 
-    async function loadRecentTxList() {
-        try {
-            const txList = await apiGet('wallet/transactions');
-            const tbody = document.getElementById('wallet-tx-list');
-            tbody.innerHTML = '';
-            if (Array.isArray(txList)) {
-                txList.reverse().forEach(tx => {
-                    const tr = document.createElement('tr');
-                    const amtCls = tx.amount >= 0 ? 'amount-positive' : 'amount-negative';
-                    tr.innerHTML = `
-                        <td class="mono"><span class="hash-link" data-txid="${escapeHtml(tx.txid)}">${escapeHtml(truncHash(tx.txid, 10))}</span></td>
-                        <td>${escapeHtml(tx.category)}</td>
-                        <td class="mono ${amtCls}">${formatAmount(tx.amount)}</td>
-                        <td>${tx.confirmations}</td>
-                        <td>${formatTime(tx.time)}</td>`;
-                    tr.querySelector('.hash-link').addEventListener('click', () => viewTransaction(tx.txid));
-                    tbody.appendChild(tr);
-                });
-            }
-        } catch (err) {
-            showToast(t('error') + ': ' + err.message, true);
-        }
-    }
 
     // ========================================================
     // 4. MINING
@@ -953,36 +952,22 @@
 
     async function loadMiningInfo() {
         try {
-            const [mining, blockchain, balance] = await Promise.all([
+            const [mining, blockchain] = await Promise.all([
                 apiGet('mining'),
                 apiGet('blockchain'),
-                apiGet('wallet/balance').catch(() => null),
             ]);
 
-            // Mining balance
-            if (balance && balance.mine) {
-                const trusted = balance.mine.trusted || 0;
-                const immature = balance.mine.immature || 0;
-                const pending = balance.mine.untrusted_pending || 0;
-                document.getElementById('mining-balance').textContent = formatNumber(trusted) + ' CRN';
-                renderInfoGrid('mining-balance-grid', [
-                    { label: t('wallet.trusted'), value: formatCRN(trusted) },
-                    { label: t('wallet.immature'), value: formatCRN(immature) },
-                    { label: t('wallet.pending'), value: formatCRN(pending) },
-                ]);
-            }
-
             const reward = getBlockReward(blockchain.blocks);
-            const nextHalving = HALVING_INTERVAL_REGTEST - (blockchain.blocks % HALVING_INTERVAL_REGTEST);
+            const nextHalving = HALVING_INTERVAL - (blockchain.blocks % HALVING_INTERVAL);
 
             renderInfoGrid('mining-info-grid', [
                 { label: t('mining.currentHeight'), value: blockchain.blocks, cls: 'large' },
                 { label: t('mining.difficulty'), value: mining.difficulty },
                 { label: t('mining.hashrate'), value: (mining.networkhashps || 0).toFixed(2) + ' H/s' },
                 { label: t('mining.chain'), value: mining.chain },
-                { label: t('mining.blockReward'), value: formatCRN(reward) },
-                { label: t('mining.blocksUntilHalving'), value: nextHalving },
-                { label: t('mining.totalSupply'), value: formatNumber(getTotalSupply(blockchain.blocks)) + ' CRN' },
+                { label: t('mining.blockReward'), value: Math.floor(reward).toLocaleString('en-US') + ' CRN' },
+                { label: t('mining.blocksUntilHalving'), value: nextHalving.toLocaleString('en-US') },
+                { label: t('mining.totalSupply'), value: Math.floor(getTotalSupply(blockchain.blocks)).toLocaleString('en-US') + ' CRN' },
                 { label: t('mining.poolSize'), value: mining.pooledtx !== undefined ? mining.pooledtx : '—' },
             ]);
         } catch (err) {
