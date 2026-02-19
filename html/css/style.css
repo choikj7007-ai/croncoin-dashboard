@@ -40,15 +40,24 @@ body {
     padding: 0 20px;
     display: flex;
     align-items: center;
+    justify-content: center;
     height: 60px;
     flex-shrink: 0;
+    position: relative;
+}
+
+.header-center {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
 }
 
 .logo {
     font-size: 24px;
     font-weight: 700;
     color: var(--accent);
-    margin-right: 32px;
+    margin-right: 16px;
     white-space: nowrap;
     text-decoration: none;
     cursor: pointer;
@@ -70,10 +79,10 @@ body {
 /* Chain Badge */
 .chain-badge {
     display: inline-block;
-    font-size: 13px;
+    font-size: 9px;
     font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 4px;
+    padding: 2px 6px;
+    border-radius: 3px;
     vertical-align: middle;
     margin-left: 8px;
     text-transform: uppercase;
@@ -112,7 +121,8 @@ body {
 
 /* Language Switcher */
 .lang-btn {
-    margin-left: auto;
+    position: absolute;
+    right: 20px;
     padding: 8px 16px;
     background: transparent;
     border: 1px solid var(--border);
@@ -177,7 +187,239 @@ body {
     display: block;
 }
 
-/* About page */
+/* About page - Hero */
+.hero {
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0a1628 0%, #122040 40%, #1a3060 100%);
+    padding: 48px 40px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    position: relative;
+}
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(52,152,219,0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+.hero-content {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    position: relative;
+    z-index: 1;
+}
+.hero-text { flex: 1; }
+.hero-title {
+    font-size: 42px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 8px;
+    letter-spacing: -0.5px;
+}
+.hero-subtitle {
+    font-size: 18px;
+    color: var(--accent);
+    margin: 0 0 16px;
+    font-weight: 500;
+}
+.hero-desc {
+    font-size: 15px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.7;
+    margin: 0 0 28px;
+}
+.hero-stats {
+    display: flex;
+    gap: 32px;
+}
+.hero-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.hero-stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+}
+.hero-stat-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.hero-logo {
+    flex-shrink: 0;
+}
+.hero-logo img {
+    width: 160px;
+    height: auto;
+    filter: drop-shadow(0 0 40px rgba(52,152,219,0.3));
+    animation: float 6s ease-in-out infinite;
+}
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+}
+.hero-dice {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 20px 24px;
+    min-width: 180px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.hero-dice:hover {
+    border-color: var(--accent);
+}
+.hero-dice-title {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.3;
+}
+.hero-dice-title .dice-block-num {
+    display: block;
+    font-size: 15px;
+    color: rgba(255,255,255,0.9);
+    font-weight: 700;
+}
+.hero-dice .dice-face {
+    width: 100px;
+    height: 100px;
+    border-width: 2px;
+}
+.hero-dice .dice-question {
+    font-size: 40px;
+}
+.hero-dice .dice-countdown {
+    font-size: 26px;
+    margin-top: 4px;
+    text-align: center;
+}
+.hero-dice .dice-countdown .countdown-label {
+    font-size: 12px;
+    text-align: center;
+    margin-bottom: 2px;
+}
+.hero-dice .dice-hero-info .dice-number {
+    font-size: 44px;
+}
+.hero-dice .dice-hero-info .dice-label {
+    font-size: 13px;
+}
+.hero-dice .dice-hero-info .dice-oddeven {
+    font-size: 16px;
+}
+
+/* About page - Spec Grid */
+.spec-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+.spec-item {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+.spec-item:hover {
+    border-color: var(--accent);
+}
+.spec-icon {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 8px;
+}
+.spec-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+.spec-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* About page - Metadata cards */
+.meta-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+.meta-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+}
+.meta-key {
+    display: block;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--accent);
+    margin-bottom: 8px;
+    font-family: monospace;
+}
+.meta-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* About page - Two column */
+.about-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* About page - Link buttons */
+.about-links {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    padding: 24px;
+}
+.about-link-btn {
+    display: inline-block;
+    padding: 12px 32px;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.2s;
+}
+.about-link-btn:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* About page - Common */
 .about-desc {
     color: var(--text-secondary);
     line-height: 1.7;

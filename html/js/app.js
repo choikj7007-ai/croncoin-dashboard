@@ -37,7 +37,9 @@
 
     function onTabActivated(tabName) {
         if (tabName !== 'dice') stopDicePolling();
+        if (tabName !== 'about') stopHeroDice();
         switch (tabName) {
+            case 'about': startHeroDice(); break;
             case 'blocks': loadRecentBlocks(); break;
             case 'wallet': loadWalletGuide(); break;
             case 'richlist': loadRichList(); break;
@@ -1353,6 +1355,114 @@
             document.getElementById('status-chain').textContent = t('status.disconnected');
         }
     }
+
+    // ========================================================
+    // HERO DICE (mini widget on About page)
+    // ========================================================
+    let _heroDiceTimer = null;
+    let _heroDiceCountdownTimer = null;
+    let _heroDiceLastHeight = 0;
+    let _heroDiceInitialized = false;
+
+    async function startHeroDice() {
+        stopHeroDice();
+        _heroDiceInitialized = false;
+        _heroDiceLastHeight = 0;
+        await heroDiceUpdate();
+        _heroDiceTimer = setInterval(heroDiceUpdate, 10000);
+    }
+
+    function stopHeroDice() {
+        if (_heroDiceTimer) { clearInterval(_heroDiceTimer); _heroDiceTimer = null; }
+        if (_heroDiceCountdownTimer) { clearInterval(_heroDiceCountdownTimer); _heroDiceCountdownTimer = null; }
+    }
+
+    async function heroDiceUpdate() {
+        try {
+            const bc = await apiGet('blockchain');
+            const height = bc.blocks;
+            const block = await apiGet('blockheight/' + height);
+            const meta = getBlockMeta(block);
+
+            if (!_heroDiceInitialized) {
+                _heroDiceInitialized = true;
+                _heroDiceLastHeight = height;
+                heroDiceShowWaiting(block.time, height + 1);
+            } else if (height !== _heroDiceLastHeight) {
+                _heroDiceLastHeight = height;
+                heroDiceShowResult(block, meta);
+                setTimeout(() => {
+                    if (_heroDiceLastHeight === height) heroDiceShowWaiting(block.time, height + 1);
+                }, 10000);
+            }
+        } catch (e) { /* silent */ }
+    }
+
+    function heroDiceShowWaiting(lastBlockTime, nextHeight) {
+        const face = document.getElementById('hero-dice-face');
+        if (!face) return;
+        face.setAttribute('data-value', '?');
+        face.classList.remove('revealed');
+        face.innerHTML = '<div class="dice-question">?</div>';
+
+        const titleEl = document.getElementById('hero-dice-title');
+        if (titleEl) titleEl.innerHTML = (getLang() === 'ko' ? '크론 주사위' : 'Cron Dice')
+            + '<span class="dice-block-num">#' + nextHeight + '</span>';
+
+        const infoEl = document.getElementById('hero-dice-info');
+        if (infoEl) infoEl.innerHTML = '';
+
+        const cdEl = document.getElementById('hero-dice-countdown');
+        if (!cdEl) return;
+        if (_heroDiceCountdownTimer) clearInterval(_heroDiceCountdownTimer);
+
+        function tick() {
+            const now = Math.floor(Date.now() / 1000);
+            const nextAt = lastBlockTime + 180;
+            let rem = nextAt - now;
+            if (rem > 0) {
+                const m = Math.floor(rem / 60), s = rem % 60;
+                cdEl.className = 'dice-countdown';
+                cdEl.innerHTML = '<div class="countdown-label">' + t('dice.waiting') + '</div>' + m + ':' + (s < 10 ? '0' : '') + s;
+            } else {
+                const e = -rem, m = Math.floor(e / 60), s = e % 60;
+                cdEl.className = 'dice-countdown overdue';
+                cdEl.innerHTML = '<div class="countdown-label">' + t('dice.overdue') + '</div>+' + m + ':' + (s < 10 ? '0' : '') + s;
+            }
+        }
+        tick();
+        _heroDiceCountdownTimer = setInterval(tick, 1000);
+    }
+
+    function heroDiceShowResult(block, meta) {
+        if (_heroDiceCountdownTimer) { clearInterval(_heroDiceCountdownTimer); _heroDiceCountdownTimer = null; }
+
+        const face = document.getElementById('hero-dice-face');
+        if (!face) return;
+        const dice = meta && meta.R ? meta.R : getDiceFromHash(block.hash);
+        const isOdd = meta && meta.P !== undefined ? meta.P === 1 : (dice % 2 !== 0);
+
+        face.setAttribute('data-value', dice);
+        face.classList.add('revealed');
+        face.innerHTML = renderDiceDots(dice);
+
+        const titleEl = document.getElementById('hero-dice-title');
+        if (titleEl) titleEl.innerHTML = (getLang() === 'ko' ? '크론 주사위' : 'Cron Dice')
+            + '<span class="dice-block-num">#' + block.height + '</span>';
+
+        const cdEl = document.getElementById('hero-dice-countdown');
+        if (cdEl) cdEl.innerHTML = '';
+
+        const infoEl = document.getElementById('hero-dice-info');
+        if (infoEl) {
+            const oddEvenText = isOdd ? t('dice.odd') : t('dice.even');
+            const oddEvenCls = isOdd ? 'odd' : 'even';
+            infoEl.innerHTML = '<div class="dice-number">' + dice + '</div><div class="dice-oddeven ' + oddEvenCls + '">' + oddEvenText + '</div>';
+        }
+    }
+
+    const heroDiceEl = document.querySelector('.hero-dice');
+    if (heroDiceEl) heroDiceEl.addEventListener('click', () => switchTab('dice'));
 
     // Apply saved language on load
     applyI18n();

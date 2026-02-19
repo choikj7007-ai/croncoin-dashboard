@@ -287,8 +287,8 @@ const I18N = {
 
         // Dice
         'tab.dice': 'Dice',
-        'dice.nextBlock': 'Block Dice #{height}',
-        'dice.history': 'Block Dice History',
+        'dice.nextBlock': 'Cron Dice #{height}',
+        'dice.history': 'Cron Dice History',
         'dice.block': 'Block',
         'dice.value': 'Dice',
         'dice.oddEven': 'Odd / Even',
@@ -625,8 +625,8 @@ const I18N = {
 
         // Dice
         'tab.dice': '\uC8FC\uC0AC\uC704',
-        'dice.nextBlock': '블록 주사위 #{height}',
-        'dice.history': '블록 주사위 기록',
+        'dice.nextBlock': '크론 주사위 #{height}',
+        'dice.history': '크론 주사위 기록',
         'dice.block': '블록',
         'dice.value': '주사위',
         'dice.oddEven': '홀수 / 짝수',

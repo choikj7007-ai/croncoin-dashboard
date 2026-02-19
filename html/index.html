@@ -13,16 +13,18 @@
 
 <!-- Header & Tabs -->
 <div class="header">
-    <a class="logo" href="/" data-tab="about"><img src="img/logo.png" alt="CronCoin" class="logo-img"><span class="chain-badge" id="chain-badge"></span></a>
-    <div class="tabs">
-        <a class="tab active" href="#about" data-tab="about" data-i18n="tab.about">CronCoin</a>
-        <a class="tab" href="#blocks" data-tab="blocks" data-i18n="tab.blocks">Block Explorer</a>
-        <a class="tab" href="#wallet" data-tab="wallet" data-i18n="tab.wallet">Create Wallet</a>
-        <a class="tab" href="#send" data-tab="send" data-i18n="tab.send">Send CronCoin</a>
-        <a class="tab" href="#richlist" data-tab="richlist" data-i18n="tab.richlist">Rich List</a>
-        <a class="tab" href="#network" data-tab="network" data-i18n="tab.network">Network</a>
-        <a class="tab" href="#dice" data-tab="dice" data-i18n="tab.dice">Dice</a>
-        <a class="tab" href="#guide" data-tab="guide" data-i18n="tab.guide">Guide</a>
+    <div class="header-center">
+        <a class="logo" href="/" data-tab="about"><img src="img/logo.png" alt="CronCoin" class="logo-img"><span class="chain-badge" id="chain-badge"></span></a>
+        <div class="tabs">
+            <a class="tab active" href="#about" data-tab="about" data-i18n="tab.about">CronCoin</a>
+            <a class="tab" href="#blocks" data-tab="blocks" data-i18n="tab.blocks">Block Explorer</a>
+            <a class="tab" href="#wallet" data-tab="wallet" data-i18n="tab.wallet">Create Wallet</a>
+            <a class="tab" href="#send" data-tab="send" data-i18n="tab.send">Send CronCoin</a>
+            <a class="tab" href="#richlist" data-tab="richlist" data-i18n="tab.richlist">Rich List</a>
+            <a class="tab" href="#network" data-tab="network" data-i18n="tab.network">Network</a>
+            <a class="tab" href="#dice" data-tab="dice" data-i18n="tab.dice">Dice</a>
+            <a class="tab" href="#guide" data-tab="guide" data-i18n="tab.guide">Guide</a>
+        </div>
     </div>
     <button class="lang-btn" id="lang-btn" title="Switch language">EN | 한</button>
 </div>
@@ -33,107 +35,165 @@
 
     <!-- 0. About CronCoin -->
     <div class="tab-content active" id="tab-about">
-        <div class="card">
-            <div class="card-title">CronCoin (CRN)</div>
-            <p class="about-desc" data-i18n="about.desc">CronCoin은 Bitcoin Core에서 포크된 암호화폐로, 스타트업 및 벤처기업 투자를 위한 블록체인 기반 디지털 화폐입니다.</p>
-        </div>
-
-        <div class="card">
-            <div class="card-title" data-i18n="about.specTitle">코인 사양</div>
-            <div class="info-grid" id="about-spec-grid">
-                <div class="info-item"><span class="info-label" data-i18n="about.symbol">심볼</span><span class="info-value">CRN</span></div>
-                <div class="info-item"><span class="info-label" data-i18n="about.unit">최소 단위</span><span class="info-value">cros (1 CRN = 1,000 cros)</span></div>
-                <div class="info-item"><span class="info-label" data-i18n="about.maxSupply">최대 공급량</span><span class="info-value">210,000,000,000 CRN</span></div>
-                <div class="info-item"><span class="info-label" data-i18n="about.blockReward">블록 보상</span><span class="info-value">600,000 CRN</span></div>
-                <div class="info-item"><span class="info-label" data-i18n="about.halving">반감기 주기</span><span class="info-value">175,000 블록</span></div>
-                <div class="info-item"><span class="info-label" data-i18n="about.blockTime">블록 생성 시간</span><span class="info-value">3분</span></div>
-                <div class="info-item"><span class="info-label" data-i18n="about.difficulty">난이도 조정</span><span class="info-value">2,016 블록마다 (~4.2일)</span></div>
-                <div class="info-item"><span class="info-label" data-i18n="about.algorithm">합의 알고리즘</span><span class="info-value">SHA-256 (Proof of Work)</span></div>
+        <!-- Hero -->
+        <div class="hero">
+            <div class="hero-content">
+                <div class="hero-logo">
+                    <img src="img/cron-white.png" alt="CronCoin">
+                </div>
+                <div class="hero-text">
+                    <h1 class="hero-title">CronCoin</h1>
+                    <p class="hero-subtitle">A new era of scheduled digital currency</p>
+                    <p class="hero-desc">블록체인 기술을 활용하여 스타트업 및 벤처기업에 투자할 수 있는 암호화폐.<br>Bitcoin Core에서 포크된 독자적인 메인넷 블록체인입니다.</p>
+                    <div class="hero-stats">
+                        <div class="hero-stat">
+                            <span class="hero-stat-value">210B</span>
+                            <span class="hero-stat-label">최대 공급량</span>
+                        </div>
+                        <div class="hero-stat">
+                            <span class="hero-stat-value">3 min</span>
+                            <span class="hero-stat-label">블록 생성</span>
+                        </div>
+                        <div class="hero-stat">
+                            <span class="hero-stat-value">SHA-256</span>
+                            <span class="hero-stat-label">PoW</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-dice">
+                    <div class="hero-dice-title" id="hero-dice-title">Next Cron Dice</div>
+                    <div class="dice-face" id="hero-dice-face" data-value="?">
+                        <div class="dice-question">?</div>
+                    </div>
+                    <div class="dice-countdown" id="hero-dice-countdown"></div>
+                    <div class="dice-hero-info" id="hero-dice-info"></div>
+                </div>
             </div>
         </div>
 
+        <!-- Coin Spec -->
         <div class="card">
-            <div class="card-title" data-i18n="about.genesisTitle">제네시스 블록</div>
-            <p class="about-desc" data-i18n="about.genesisDesc">2025년 2월 14일(UTC)에 생성. 코인베이스 메시지:</p>
+            <div class="card-title">Coin Specification</div>
+            <div class="spec-grid">
+                <div class="spec-item">
+                    <div class="spec-icon">CRN</div>
+                    <div class="spec-label">심볼</div>
+                    <div class="spec-value">CRN</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-icon">C</div>
+                    <div class="spec-label">최소 단위</div>
+                    <div class="spec-value">cros (1 CRN = 1,000 cros)</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-icon">S</div>
+                    <div class="spec-label">최대 공급량</div>
+                    <div class="spec-value">210,000,000,000 CRN</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-icon">R</div>
+                    <div class="spec-label">블록 보상</div>
+                    <div class="spec-value">600,000 CRN</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-icon">H</div>
+                    <div class="spec-label">반감기 주기</div>
+                    <div class="spec-value">175,000 블록</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-icon">T</div>
+                    <div class="spec-label">블록 생성 시간</div>
+                    <div class="spec-value">3분</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-icon">D</div>
+                    <div class="spec-label">난이도 조정</div>
+                    <div class="spec-value">2,016 블록 (~4.2일)</div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-icon">#</div>
+                    <div class="spec-label">합의 알고리즘</div>
+                    <div class="spec-value">SHA-256 (Proof of Work)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Genesis Block -->
+        <div class="card">
+            <div class="card-title">Genesis Block</div>
+            <p class="about-desc">2025년 2월 14일(UTC)에 생성된 최초의 블록.</p>
             <div class="about-quote">"CronCoin 14/Feb/2026 A new era of scheduled digital currency begins"</div>
             <div class="info-grid" style="margin-top:12px">
-                <div class="info-item"><span class="info-label" data-i18n="about.genesisHash">메인넷 블록 해시</span><span class="info-value mono" style="font-size:12px">00000cd0be01895d578936772a1dbd4c85764821a448b50f040e1ecead0006fe</span></div>
-                <div class="info-item"><span class="info-label" data-i18n="about.merkleRoot">머클 루트</span><span class="info-value mono" style="font-size:12px">95e88b0bfe31e6ee9f09204dfd6d06b6c3c526b18288a639f8f52510ada0d02b</span></div>
+                <div class="info-item"><span class="info-label">Block Hash</span><span class="info-value mono" style="font-size:12px;word-break:break-all">00000cd0be01895d578936772a1dbd4c85764821a448b50f040e1ecead0006fe</span></div>
+                <div class="info-item"><span class="info-label">Merkle Root</span><span class="info-value mono" style="font-size:12px;word-break:break-all">95e88b0bfe31e6ee9f09204dfd6d06b6c3c526b18288a639f8f52510ada0d02b</span></div>
             </div>
         </div>
 
+        <!-- OP_RETURN Metadata -->
         <div class="card">
-            <div class="card-title" data-i18n="about.metadataTitle">블록 메타데이터 (OP_RETURN)</div>
-            <p class="about-desc" data-i18n="about.metadataDesc">CronCoin의 고유 기능으로, 모든 블록의 코인베이스 트랜잭션에 사람이 읽을 수 있는 메타데이터가 기록됩니다.</p>
-            <div class="about-code">CRN:R=&lt;난수1~6&gt;:P=&lt;짝0/홀1&gt;:T=&lt;시각&gt;:H=&lt;높이&gt;</div>
-            <div class="info-grid" style="margin-top:12px">
-                <div class="info-item"><span class="info-label">R</span><span class="info-value" data-i18n="about.metaR">의사난수 (1~6), 이전 블록 해시 기반</span></div>
-                <div class="info-item"><span class="info-label">P</span><span class="info-value" data-i18n="about.metaP">R의 짝홀 (짝수=0, 홀수=1)</span></div>
-                <div class="info-item"><span class="info-label">T</span><span class="info-value" data-i18n="about.metaT">블록 생성 시각 (UTC)</span></div>
-                <div class="info-item"><span class="info-label">H</span><span class="info-value" data-i18n="about.metaH">블록 높이</span></div>
+            <div class="card-title">Block Metadata (OP_RETURN)</div>
+            <p class="about-desc">CronCoin의 고유 기능 &mdash; 모든 블록의 코인베이스 트랜잭션에 사람이 읽을 수 있는 메타데이터가 기록됩니다.</p>
+            <div class="about-code">CRN:R=&lt;1~6&gt;:P=&lt;0|1&gt;:T=&lt;UTC time&gt;:H=&lt;height&gt;</div>
+            <div class="meta-cards">
+                <div class="meta-card"><span class="meta-key">R</span><span class="meta-desc">의사난수 (1~6)<br>이전 블록 해시 기반</span></div>
+                <div class="meta-card"><span class="meta-key">P</span><span class="meta-desc">R의 짝/홀<br>짝수=0, 홀수=1</span></div>
+                <div class="meta-card"><span class="meta-key">T</span><span class="meta-desc">블록 생성 시각<br>UTC 기준</span></div>
+                <div class="meta-card"><span class="meta-key">H</span><span class="meta-desc">블록 높이<br>10진수</span></div>
             </div>
         </div>
 
+        <!-- Network & Address -->
+        <div class="about-two-col">
+            <div class="card">
+                <div class="card-title">Network</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>항목</th><th>Mainnet</th><th>Testnet</th></tr></thead>
+                        <tbody>
+                            <tr><td>Port</td><td>9333</td><td>19333</td></tr>
+                            <tr><td>Bech32</td><td class="mono">crn</td><td class="mono">tcrn</td></tr>
+                            <tr><td>Base58</td><td>28 (C...)</td><td>111</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">Address Format</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>Type</th><th>Prefix</th></tr></thead>
+                        <tbody>
+                            <tr><td>P2PKH (Legacy)</td><td class="mono">C...</td></tr>
+                            <tr><td>P2WPKH (Bech32)</td><td class="mono">crn1...</td></tr>
+                            <tr><td>P2TR (Taproot)</td><td class="mono">crn1p...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fee Structure -->
         <div class="card">
-            <div class="card-title" data-i18n="about.networkTitle">네트워크 정보</div>
+            <div class="card-title">Fee Structure</div>
+            <p class="about-desc">1 CRN = 1,000 cros. 수수료율은 cros/kvB 단위입니다.</p>
             <div class="table-wrap">
                 <table>
-                    <thead><tr>
-                        <th data-i18n="about.netItem">항목</th>
-                        <th data-i18n="about.netMainnet">메인넷</th>
-                        <th data-i18n="about.netTestnet">테스트넷</th>
-                    </tr></thead>
+                    <thead><tr><th>항목</th><th>cros/kvB</th><th>CRN/kvB</th></tr></thead>
                     <tbody>
-                        <tr><td data-i18n="about.netPort">기본 포트</td><td>9333</td><td>19333</td></tr>
-                        <tr><td>Bech32</td><td>crn</td><td>tcrn</td></tr>
-                        <tr><td>Base58</td><td>28 (C...)</td><td>111</td></tr>
+                        <tr><td>최소 중계 수수료</td><td>1</td><td>0.001</td></tr>
+                        <tr><td>블록 최소 수수료</td><td>1</td><td>0.001</td></tr>
+                        <tr><td>더스트 중계 수수료</td><td>3</td><td>0.003</td></tr>
+                        <tr><td>폐기 수수료</td><td>10</td><td>0.01</td></tr>
+                        <tr><td>최대 트랜잭션 수수료</td><td colspan="2">100,000 cros (100 CRN)</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-title" data-i18n="about.addressTitle">주소 형식</div>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr>
-                        <th data-i18n="about.addrType">유형</th>
-                        <th data-i18n="about.addrPrefix">접두사</th>
-                    </tr></thead>
-                    <tbody>
-                        <tr><td>P2PKH (Legacy)</td><td class="mono">C...</td></tr>
-                        <tr><td>P2WPKH (Bech32)</td><td class="mono">crn1...</td></tr>
-                        <tr><td>P2TR (Taproot)</td><td class="mono">crn1p...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title" data-i18n="about.feeTitle">수수료 구조</div>
-            <p class="about-desc" data-i18n="about.feeDesc">1 CRN = 1,000 cros. 수수료율은 cros/kvB (킬로가상바이트당 cros) 단위입니다.</p>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr>
-                        <th data-i18n="about.feeItem">항목</th>
-                        <th>cros/kvB</th>
-                        <th>CRN/kvB</th>
-                    </tr></thead>
-                    <tbody>
-                        <tr><td data-i18n="about.feeRelay">최소 중계 수수료</td><td>1</td><td>0.001</td></tr>
-                        <tr><td data-i18n="about.feeBlock">블록 최소 수수료</td><td>1</td><td>0.001</td></tr>
-                        <tr><td data-i18n="about.feeDust">더스트 중계 수수료</td><td>3</td><td>0.003</td></tr>
-                        <tr><td data-i18n="about.feeDiscard">폐기 수수료</td><td>10</td><td>0.01</td></tr>
-                        <tr><td data-i18n="about.feeMaxTx">최대 트랜잭션 수수료</td><td colspan="2">100,000 cros (100 CRN)</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title" data-i18n="about.licenseTitle">라이선스</div>
-            <p class="about-desc" data-i18n="about.licenseDesc">CronCoin Core는 MIT 라이선스로 배포됩니다.</p>
-            <p class="about-desc"><a href="https://github.com/niceguy135/croncoin-source" target="_blank" style="color:var(--accent)">GitHub Repository</a></p>
+        <!-- Links -->
+        <div class="card about-links">
+            <a href="files/cron_white_paper.pdf" target="_blank" class="about-link-btn">White Paper</a>
+            <a href="https://github.com/niceguy135/croncoin-source" target="_blank" class="about-link-btn">GitHub</a>
         </div>
     </div>
 
@@ -463,7 +523,7 @@
     <!-- 7. Dice -->
     <div class="tab-content" id="tab-dice">
         <div class="card">
-            <div class="card-title" id="dice-next-title">Next Block Dice</div>
+            <div class="card-title" id="dice-next-title">Next Cron Dice</div>
             <div class="dice-hero" id="dice-hero">
                 <div class="dice-face" id="dice-face" data-value="?">
                     <div class="dice-question">?</div>
@@ -474,7 +534,7 @@
         </div>
 
         <div class="card">
-            <div class="card-title" data-i18n="dice.history">Block Dice History</div>
+            <div class="card-title" data-i18n="dice.history">Cron Dice History</div>
             <div class="table-wrap">
                 <table>
                     <thead><tr>
