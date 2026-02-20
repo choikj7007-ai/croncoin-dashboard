@@ -283,11 +283,18 @@ function hashLink(hash, onclick) {
  * Show a brief notification toast.
  */
 function showToast(message, isError) {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.textContent = message;
-    toast.className = 'toast ' + (isError ? 'toast-error' : 'toast-success') + ' show';
-    setTimeout(() => toast.className = 'toast', 3000);
+    const overlay = document.getElementById('toast-overlay');
+    const msgEl = document.getElementById('toast-message');
+    const btn = document.getElementById('toast-confirm');
+    if (!overlay || !msgEl) return;
+    msgEl.textContent = message;
+    msgEl.className = 'toast-message ' + (isError ? 'toast-error' : 'toast-success');
+    overlay.classList.add('show');
+    function dismiss() {
+        overlay.classList.remove('show');
+        btn.removeEventListener('click', dismiss);
+    }
+    btn.addEventListener('click', dismiss);
 }
 
 /**

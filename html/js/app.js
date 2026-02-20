@@ -343,11 +343,9 @@
         document.getElementById('hd-mnemonic-input').value = '';
         document.getElementById('hd-xpub-input').value = '';
         // Hide balance input cards and results
-        document.getElementById('hd-xpub-balance-card').style.display = 'none';
         document.getElementById('hd-address-balance-card').style.display = 'none';
         document.getElementById('hd-xpub-balance-result').style.display = 'none';
         document.getElementById('hd-address-balance-result').style.display = 'none';
-        document.getElementById('hd-xpub-balance-input').value = '';
         document.getElementById('hd-address-balance-input').value = '';
     }
 
@@ -630,10 +628,10 @@
         }
     });
 
-    // Recover from xpub (watch-only)
+    // Lookup wallets from xprv (master private key)
     document.getElementById('hd-xpub-recover-btn').addEventListener('click', async () => {
-        const xpub = document.getElementById('hd-xpub-input').value.trim();
-        if (!xpub) {
+        const xprv = document.getElementById('hd-xpub-input').value.trim();
+        if (!xprv) {
             showToast(t('hd.invalidXpub'), true);
             return;
         }
@@ -643,67 +641,51 @@
         btn.textContent = t('hd.recovering');
 
         try {
-            const data = await apiPost('wallet/recover-xpub', { xpub });
+            const data = await apiPost('wallet/xprv-wallets', { xprv });
 
             // Hide input cards
             document.getElementById('hd-xpub-input-card').style.display = 'none';
 
-            // Show the flow container — only master xpub, pubkey, address (no mnemonic, no privkey)
-            document.getElementById('hd-flow-container').style.display = 'block';
+            // Show results in the xpub balance result area
+            const resultEl = document.getElementById('hd-xpub-balance-result');
+            resultEl.style.display = '';
+            document.getElementById('xpub-result-title').textContent = t('hd.recoverXpubBtn');
 
-            // Hide mnemonic and privkey steps
-            document.getElementById('hd-step-mnemonic').style.display = 'none';
-            document.getElementById('hd-step-privkey').style.display = 'none';
-
-            // Show master key step (xpub only)
-            await new Promise(resolve => setTimeout(resolve, 100));
-            const masterEl = document.getElementById('hd-step-master');
-            document.getElementById('hd-master-keys').innerHTML =
-                `<div class="keypair-box">
-                    <div class="keypair-row"><span class="keypair-label" style="background:rgba(46,204,113,0.2);color:var(--success)">xpub</span><span class="keypair-value mono-text">${escapeHtml(data.xpub)}</span></div>
-                </div>
-                <div class="watch-only-badge">${escapeHtml(t('hd.watchOnly'))}</div>`;
-            masterEl.style.display = '';
-            masterEl.style.animationDelay = '0s';
-
-            // Show public key step
-            await new Promise(resolve => setTimeout(resolve, 300));
-            const pubEl = document.getElementById('hd-step-pubkey');
-            document.getElementById('hd-pubkey').textContent = data.public_key_hex;
-            pubEl.style.display = '';
-            pubEl.style.animationDelay = '0s';
-
-            // Show address step
-            await new Promise(resolve => setTimeout(resolve, 300));
-            const addrEl = document.getElementById('hd-step-address');
-            document.getElementById('hd-address').textContent = data.address;
-            const qrEl = document.getElementById('hd-address-qr');
-            qrEl.innerHTML = '';
-            new QRCode(qrEl, {
-                text: data.address,
-                width: 128, height: 128,
-                colorDark: '#000000', colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M,
-            });
-            addrEl.style.display = '';
-            addrEl.style.animationDelay = '0s';
-
-            // Store partial wallet data for copy (no privkey/mnemonic)
-            _lastGeneratedWallet = {
-                mnemonic: '',
-                master_xprv: '',
-                master_xpub: data.xpub,
-                private_key_wif: '',
-                public_key_hex: data.public_key_hex,
-                address: data.address,
-            };
-
-            await new Promise(resolve => setTimeout(resolve, 300));
-            document.getElementById('hd-action-bar').style.display = '';
-
-            // No backup warning for watch-only
+            document.getElementById('hd-flow-container').style.display = 'none';
             document.getElementById('hd-backup-warning').style.display = 'none';
-            showToast(t('hd.recoveredXpub'));
+            document.getElementById('hd-action-bar').style.display = 'none';
+            document.getElementById('hd-address-balance-result').style.display = 'none';
+
+            renderInfoGrid('xpub-balance-summary', [
+                { label: t('bal.totalBalance'), value: formatCRN(data.total_balance), cls: 'large' },
+                { label: t('bal.addressesChecked'), value: data.addresses_checked },
+                { label: t('bal.addressesWithBalance'), value: data.addresses_with_balance },
+            ]);
+
+            const tbody = document.getElementById('xpub-balance-table');
+            tbody.innerHTML = '';
+
+            if (data.addresses.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted)">${escapeHtml(t('bal.noBalance'))}</td></tr>`;
+            } else {
+                data.addresses.forEach(addr => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="mono" style="font-size:12px">${escapeHtml(addr.path)}</td>
+                        <td class="mono"><span class="hash-link" style="cursor:pointer">${escapeHtml(addr.address)}</span></td>
+                        <td class="mono">${formatCRN(addr.balance)}</td>`;
+                    tr.querySelector('.hash-link').addEventListener('click', () => {
+                        switchTab('richlist');
+                        setTimeout(() => viewAddressDetail(addr.address), 100);
+                    });
+                    tbody.appendChild(tr);
+                });
+            }
+
+            resultEl.scrollIntoView({ behavior: 'smooth' });
+            showToast(data.addresses_with_balance > 0
+                ? t('bal.totalBalance') + ': ' + formatCRN(data.total_balance)
+                : t('bal.noBalance'));
 
         } catch (err) {
             showToast(t('hd.invalidXpub') + ': ' + err.message, true);
@@ -717,7 +699,7 @@
     // 3-1b. BALANCE CHECK (xpub / Address)
     // ========================================================
 
-    const _allBalanceCards = ['hd-xpub-balance-card', 'hd-address-balance-card'];
+    const _allBalanceCards = ['hd-address-balance-card'];
 
     function hideAllBalanceCards() {
         _allBalanceCards.forEach(id => {
@@ -740,13 +722,63 @@
         _lastGeneratedWallet = null;
     }
 
-    // Toggle xpub balance card
-    document.getElementById('hd-balance-xpub-btn').addEventListener('click', () => {
-        const card = document.getElementById('hd-xpub-balance-card');
-        const wasHidden = card.style.display === 'none';
+    // My mining wallets - directly query API
+    document.getElementById('hd-balance-xpub-btn').addEventListener('click', async () => {
         hideAllInputCards();
         hideGeneratedResults();
-        card.style.display = wasHidden ? '' : 'none';
+
+        const btn = document.getElementById('hd-balance-xpub-btn');
+        btn.disabled = true;
+        const origText = btn.textContent;
+        btn.textContent = t('bal.checking');
+
+        try {
+            const data = await apiGet('wallet/my-addresses');
+
+            const resultEl = document.getElementById('hd-xpub-balance-result');
+            resultEl.style.display = '';
+            document.getElementById('xpub-result-title').textContent = t('bal.xpubBtn');
+
+            document.getElementById('hd-flow-container').style.display = 'none';
+            document.getElementById('hd-backup-warning').style.display = 'none';
+            document.getElementById('hd-action-bar').style.display = 'none';
+            document.getElementById('hd-address-balance-result').style.display = 'none';
+
+            renderInfoGrid('xpub-balance-summary', [
+                { label: t('bal.totalBalance'), value: formatCRN(data.total_balance), cls: 'large' },
+                { label: t('bal.addressesWithBalance'), value: data.addresses.filter(a => a.balance > 0).length },
+            ]);
+
+            const tbody = document.getElementById('xpub-balance-table');
+            tbody.innerHTML = '';
+
+            if (data.addresses.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted)">${escapeHtml(t('bal.noBalance'))}</td></tr>`;
+            } else {
+                data.addresses.forEach((addr, i) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>#${i + 1}</td>
+                        <td class="mono"><span class="hash-link" style="cursor:pointer">${escapeHtml(addr.address)}</span></td>
+                        <td class="mono">${formatCRN(addr.balance)}</td>`;
+                    tr.querySelector('.hash-link').addEventListener('click', () => {
+                        switchTab('richlist');
+                        setTimeout(() => viewAddressDetail(addr.address), 100);
+                    });
+                    tbody.appendChild(tr);
+                });
+            }
+
+            resultEl.scrollIntoView({ behavior: 'smooth' });
+            showToast(data.total_balance > 0
+                ? t('bal.totalBalance') + ': ' + formatCRN(data.total_balance)
+                : t('bal.noBalance'));
+        } catch (err) {
+            showToast(t('error') + ': ' + err.message, true);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = origText;
+        }
     });
 
     // Toggle address balance card
@@ -759,71 +791,11 @@
     });
 
     // Close buttons
-    document.getElementById('hd-xpub-balance-close').addEventListener('click', () => {
-        document.getElementById('hd-xpub-balance-card').style.display = 'none';
-    });
     document.getElementById('hd-address-balance-close').addEventListener('click', () => {
         document.getElementById('hd-address-balance-card').style.display = 'none';
     });
 
-    // xpub balance check
-    document.getElementById('hd-xpub-balance-check-btn').addEventListener('click', async () => {
-        const xpub = document.getElementById('hd-xpub-balance-input').value.trim();
-        if (!xpub) {
-            showToast(t('bal.invalidXpub'), true);
-            return;
-        }
-
-        const btn = document.getElementById('hd-xpub-balance-check-btn');
-        btn.disabled = true;
-        btn.textContent = t('bal.checking');
-
-        try {
-            const data = await apiPost('wallet/xpub-balance', { xpub });
-
-            const resultEl = document.getElementById('hd-xpub-balance-result');
-            resultEl.style.display = '';
-
-            // Hide the flow container and other results
-            document.getElementById('hd-flow-container').style.display = 'none';
-            document.getElementById('hd-backup-warning').style.display = 'none';
-            document.getElementById('hd-action-bar').style.display = 'none';
-            document.getElementById('hd-address-balance-result').style.display = 'none';
-
-            renderInfoGrid('xpub-balance-summary', [
-                { label: t('bal.totalBalance'), value: formatCRN(data.total_balance), cls: 'large' },
-                { label: t('bal.addressesChecked'), value: data.addresses_checked },
-                { label: t('bal.addressesWithBalance'), value: data.addresses_with_balance },
-            ]);
-
-            const tbody = document.getElementById('xpub-balance-table');
-            tbody.innerHTML = '';
-
-            if (data.addresses.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted)">${escapeHtml(t('bal.noBalance'))}</td></tr>`;
-            } else {
-                data.addresses.forEach(addr => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td class="mono">${escapeHtml(addr.path)}</td>
-                        <td class="mono">${escapeHtml(addr.address)}</td>
-                        <td class="mono">${formatCRN(addr.balance)}</td>`;
-                    tbody.appendChild(tr);
-                });
-            }
-
-            document.getElementById('hd-xpub-balance-card').style.display = 'none';
-            resultEl.scrollIntoView({ behavior: 'smooth' });
-            showToast(data.addresses_with_balance > 0
-                ? t('bal.totalBalance') + ': ' + formatCRN(data.total_balance)
-                : t('bal.noBalance'));
-        } catch (err) {
-            showToast(t('bal.invalidXpub') + ': ' + err.message, true);
-        } finally {
-            btn.disabled = false;
-            btn.textContent = t('bal.checkBtn');
-        }
-    });
+    // (xpub balance check removed - replaced by direct my-addresses API call above)
 
     // Address balance check
     document.getElementById('hd-address-balance-check-btn').addEventListener('click', async () => {
@@ -1022,16 +994,35 @@
 
             tbody.innerHTML = '';
             const supply = data.total_supply || 1;
+            const INITIAL_SHOW = 20;
             data.addresses.forEach((entry, i) => {
                 const tr = document.createElement('tr');
-                const pct = Math.round(entry.balance / supply * 100);
+                if (i >= INITIAL_SHOW) tr.style.display = 'none';
+                tr.className = 'richlist-row';
+                const pctRaw = entry.balance / supply * 100;
+                const pct = pctRaw >= 1 ? Math.round(pctRaw) + '%' : pctRaw >= 0.01 ? pctRaw.toFixed(2) + '%' : '< 0.01%';
                 tr.innerHTML = `
                     <td>${i + 1}</td>
-                    <td class="mono">${escapeHtml(entry.address)}</td>
+                    <td class="mono"><span class="hash-link" style="cursor:pointer">${escapeHtml(entry.address)}</span></td>
                     <td class="mono">${Math.round(entry.balance).toLocaleString('en-US')}</td>
-                    <td>${pct}%</td>`;
+                    <td>${pct}</td>`;
+                tr.querySelector('.hash-link').addEventListener('click', () => viewAddressDetail(entry.address));
                 tbody.appendChild(tr);
             });
+
+            if (data.addresses.length > INITIAL_SHOW) {
+                const moreTr = document.createElement('tr');
+                moreTr.id = 'richlist-more-row';
+                moreTr.innerHTML = `<td colspan="4" style="text-align:center;padding:12px">
+                    <button id="richlist-more-btn" style="background:var(--accent);color:#fff;border:none;padding:8px 24px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600">
+                        + ${data.addresses.length - INITIAL_SHOW}개 더보기
+                    </button></td>`;
+                tbody.appendChild(moreTr);
+                document.getElementById('richlist-more-btn').addEventListener('click', () => {
+                    tbody.querySelectorAll('.richlist-row').forEach(r => r.style.display = '');
+                    moreTr.remove();
+                });
+            }
 
             if (data.addresses.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted)">${escapeHtml(t('block.noBlocks'))}</td></tr>`;
@@ -1041,6 +1032,91 @@
             showToast(t('richlist.error') + ': ' + err.message, true);
         }
     }
+
+    // ========================================================
+    // 5-1. ADDRESS DETAIL (from Rich List)
+    // ========================================================
+
+    async function viewAddressDetail(address) {
+        const el = document.getElementById('address-detail');
+        const tbody = document.getElementById('address-tx-list');
+        el.style.display = 'block';
+        tbody.innerHTML = `<tr><td colspan="6" class="loading">${escapeHtml(t('loading'))}</td></tr>`;
+        el.scrollIntoView({ behavior: 'smooth' });
+
+        try {
+            const data = await apiGet('address/' + address + '/transactions');
+
+            document.getElementById('address-detail-info').innerHTML =
+                `<div class="mono" style="font-size:15px;word-break:break-all;color:var(--text-primary);padding:4px 0">${escapeHtml(data.address)}</div>`;
+            document.getElementById('address-tx-count').textContent =
+                t('address.txCount') + ': ' + data.tx_count.toLocaleString('en-US');
+
+            tbody.innerHTML = '';
+            if (data.transactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">${escapeHtml(t('address.noTx'))}</td></tr>`;
+                return;
+            }
+
+            // Show most recent first
+            function fmtCRN(v) {
+                const parts = parseFloat(v).toFixed(3).split('.');
+                parts[0] = parseInt(parts[0]).toLocaleString('en-US');
+                return parts[0] + '<span class="dec">.' + parts[1] + '</span>';
+            }
+            const ADDR_TX_SHOW = 20;
+            const txs = data.transactions.slice().reverse();
+            txs.forEach((tx, i) => {
+                const tr = document.createElement('tr');
+                if (i >= ADDR_TX_SHOW) tr.style.display = 'none';
+                tr.className = 'addr-tx-row';
+                let typeLabel, typeCls, amount;
+                if (tx.sent > 0 && tx.received > 0) {
+                    typeLabel = t('address.sendRecv');
+                    typeCls = 'style="color:var(--warning)"';
+                    amount = '+' + fmtCRN(tx.received) + ' / -' + fmtCRN(tx.sent);
+                } else if (tx.sent > 0) {
+                    typeLabel = t('address.sent');
+                    typeCls = 'style="color:var(--error)"';
+                    amount = '-' + fmtCRN(tx.sent);
+                } else {
+                    typeLabel = t('address.received');
+                    typeCls = 'style="color:var(--success)"';
+                    amount = '+' + fmtCRN(tx.received);
+                }
+                tr.innerHTML = `
+                    <td><strong>#${tx.blockheight}</strong></td>
+                    <td class="mono"><span class="hash-link" data-txid="${escapeHtml(tx.txid)}">${escapeHtml(truncHash(tx.txid, 12))}</span></td>
+                    <td ${typeCls}>${escapeHtml(typeLabel)}</td>
+                    <td class="mono" ${typeCls}>${amount}</td>
+                    <td class="mono">${fmtCRN(tx.balance)}</td>
+                    <td>${formatTime(tx.time)}</td>`;
+                tr.querySelector('.hash-link').addEventListener('click', () => viewTransaction(tx.txid));
+                tbody.appendChild(tr);
+            });
+
+            if (txs.length > ADDR_TX_SHOW) {
+                const moreTr = document.createElement('tr');
+                moreTr.id = 'addr-tx-more-row';
+                const remaining = txs.length - ADDR_TX_SHOW;
+                moreTr.innerHTML = `<td colspan="6" style="text-align:center;padding:12px">
+                    <button id="addr-tx-more-btn" style="background:var(--accent);color:#fff;border:none;padding:8px 24px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600">
+                        + ${remaining.toLocaleString('en-US')}${getLang() === 'ko' ? '개 더보기' : ' more'}
+                    </button></td>`;
+                tbody.appendChild(moreTr);
+                document.getElementById('addr-tx-more-btn').addEventListener('click', () => {
+                    tbody.querySelectorAll('.addr-tx-row').forEach(r => r.style.display = '');
+                    moreTr.remove();
+                });
+            }
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--error)">${escapeHtml(err.message)}</td></tr>`;
+        }
+    }
+
+    document.getElementById('address-detail-close').addEventListener('click', () => {
+        document.getElementById('address-detail').style.display = 'none';
+    });
 
     // ========================================================
     // 6. NETWORK STATUS
@@ -1312,9 +1388,7 @@
         { titleKey: 'guide.howto.balance.title', descKey: 'guide.howto.balance.desc', icon: '🔎', html: true },
         { titleKey: 'guide.howto.send.title', descKey: 'guide.howto.send.desc', icon: '📤', html: true },
         { titleKey: 'guide.blocks.title', descKey: 'guide.blocks.desc', icon: '🔍' },
-        { titleKey: 'guide.tx.title', descKey: 'guide.tx.desc', icon: '📄' },
         { titleKey: 'guide.wallet.title', descKey: 'guide.wallet.desc', icon: '💰' },
-        { titleKey: 'guide.mining.title', descKey: 'guide.mining.desc', icon: '⛏' },
         { titleKey: 'guide.richlist.title', descKey: 'guide.richlist.desc', icon: '🏆' },
         { titleKey: 'guide.network.title', descKey: 'guide.network.desc', icon: '🌐' },
         { titleKey: 'guide.dice.title', descKey: 'guide.dice.desc', icon: '🎲' },

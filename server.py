@@ -223,7 +223,7 @@ def derive_privkey_wif(xprv_b58, hdkeypath):
 
 
 def _get_master_tprv():
-    """Get master tprv from wallet's listdescriptors (cached)."""
+    """Get master xprv/tprv from wallet's listdescriptors (cached)."""
     if hasattr(_get_master_tprv, "_cache"):
         return _get_master_tprv._cache
     result, err = rpc_call("listdescriptors", [True])
@@ -231,8 +231,8 @@ def _get_master_tprv():
         return None
     for d in result.get("descriptors", []):
         desc = d.get("desc", "")
-        # Match wpkh(tprv.../0/*) – receive address descriptor
-        m = re.match(r"^wpkh\((tprv[A-Za-z0-9]+)/", desc)
+        # Match wpkh(xprv.../0/*) or wpkh(tprv.../0/*) – receive address descriptor
+        m = re.match(r"^wpkh\(([xt]prv[A-Za-z0-9]+)/", desc)
         if m and "/0/*)" in desc:
             _get_master_tprv._cache = m.group(1)
             return m.group(1)
@@ -1099,79 +1099,152 @@ def recover_xpub(handler, match):
             error_response(handler, "Invalid xpub key", 400)
 
 
-@route("POST", r"/api/wallet/xpub-balance")
-def xpub_balance(handler, match):
-    """Check balances for all addresses derived from an xpub key."""
+def _get_account_xpub():
+    """Extract account-level xpub from wallet's wpkh receive descriptor."""
+    result, err = rpc_call("listdescriptors", [False])
+    if err or not isinstance(result, dict):
+        return None
+    for d in result.get("descriptors", []):
+        desc = d.get("desc", "")
+        # Match wpkh([fingerprint/path]xpub.../0/*)
+        m = re.match(r"^wpkh\(\[[^\]]+\]([xt]pub[A-Za-z0-9]+)/0/\*\)", desc)
+        if m:
+            return m.group(1)
+    return None
+
+
+@route("GET", r"/api/wallet/account-xpub")
+def get_account_xpub(handler, match):
+    """Return the account-level xpub for the wallet."""
+    xpub = _get_account_xpub()
+    if not xpub:
+        return error_response(handler, "No account xpub found", 404)
+    json_response(handler, {"xpub": xpub})
+
+
+def _read_mining_addresses():
+    """Read mining addresses from mining.conf."""
+    conf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mining.conf")
+    addresses = []
+    try:
+        with open(conf_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("MINING_ADDRESS_") and "=" in line:
+                    val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    if val:
+                        addresses.append(val)
+    except FileNotFoundError:
+        pass
+    return addresses
+
+
+@route("GET", r"/api/wallet/my-addresses")
+def get_my_addresses(handler, match):
+    """Return mining addresses from mining.conf with their balances."""
+    addresses = _read_mining_addresses()
+    if not addresses:
+        return error_response(handler, "No mining addresses configured", 404)
+
+    results = []
+    for addr in addresses:
+        scan, err = rpc_call("scantxoutset", ["start", [f"addr({addr})"]])
+        if err:
+            continue
+        total = scan.get("total_amount", 0)
+        utxo_count = len(scan.get("unspents", []))
+        results.append({
+            "address": addr,
+            "balance": total,
+            "utxo_count": utxo_count,
+        })
+
+    total_balance = sum(r["balance"] for r in results)
+    json_response(handler, {
+        "total_balance": total_balance,
+        "addresses": results,
+    })
+
+
+@route("POST", r"/api/wallet/xprv-wallets")
+def xprv_wallets(handler, match):
+    """Derive addresses from master xprv via hardened BIP84 path and scan balances."""
     body = _read_body(handler)
     if body is None:
         return error_response(handler, "Invalid JSON body", 400)
-    xpub = body.get("xpub", "").strip()
-    if not xpub:
-        return error_response(handler, "xpub is required", 400)
-    count = body.get("count", 20)
+    xprv = body.get("xprv", "").strip()
+    if not xprv:
+        return error_response(handler, "xprv is required", 400)
+    count = body.get("count", 50)
     if not isinstance(count, int) or count < 1 or count > 200:
         return error_response(handler, "count must be 1-200", 400)
 
     try:
-        pub_bytes, chain_code, depth, fingerprint, child_num = _parse_xpub(xpub)
+        master_key, master_chain = _parse_xprv(xprv)
     except Exception:
-        return error_response(handler, "Invalid xpub key", 400)
+        return error_response(handler, "Invalid xprv key", 400)
 
-    # Derive receive (0/i) and change (1/i) addresses
-    addr_map = {}  # address -> path string
+    # Scan BOTH coin_type=0 and coin_type=1 paths to cover all possible addresses
+    # (wallet generation may use either path regardless of network setting)
+    addr_map = {}  # address -> {path, wif}
     scan_descriptors = []
-    for chain_idx in (0, 1):
-        try:
-            chain_pub, chain_chain = _bip32_derive_child_pub(pub_bytes, chain_code, chain_idx)
-        except Exception:
-            continue
-        for i in range(count):
-            try:
-                child_pub, _ = _bip32_derive_child_pub(chain_pub, chain_chain, i)
-                addr = _pubkey_to_bech32_address(child_pub)
-                path_str = f"{chain_idx}/{i}"
-                addr_map[addr] = path_str
+
+    for coin_type in (0, 1):
+        # Derive through hardened path: m/84h/{coin_type}h/0h
+        key, chain = master_key, master_chain
+        for idx in [84 + 0x80000000, coin_type + 0x80000000, 0x80000000]:
+            key, chain = _bip32_derive_child(key, chain, idx)
+
+        # Now at account level — derive receive (0/i) and change (1/i) addresses
+        for chain_idx in (0, 1):
+            chain_key, chain_chain = _bip32_derive_child(key, chain, chain_idx)
+            for i in range(count):
+                child_key, _ = _bip32_derive_child(chain_key, chain_chain, i)
+                pubkey = _privkey_to_compressed_pubkey(child_key)
+                addr = _pubkey_to_bech32_address(pubkey)
+                path_str = f"m/84h/{coin_type}h/0h/{chain_idx}/{i}"
+                addr_map[addr] = {"path": path_str, "wif": _privkey_to_wif(child_key)}
                 scan_descriptors.append(f"addr({addr})")
-            except Exception:
-                continue
 
     if not scan_descriptors:
-        return error_response(handler, "Failed to derive addresses from xpub", 400)
+        return error_response(handler, "Failed to derive addresses", 400)
 
-    # Batch query using scantxoutset
+    # Batch query using scantxoutset (single call for all descriptors)
     result, err = rpc_call("scantxoutset", ["start", scan_descriptors])
     if err:
         return error_response(handler, err.get("message", "scantxoutset failed"))
 
     # Aggregate balances by address
-    balances = {}  # address -> total balance
+    balances = {}
     for utxo in result.get("unspents", []):
-        addr = utxo.get("desc", "")
-        # desc format: "addr(crnrt1q...)#checksum"
-        m = re.match(r"addr\(([^)]+)\)", addr)
+        desc = utxo.get("desc", "")
+        m = re.match(r"addr\(([^)]+)\)", desc)
         if m:
             a = m.group(1)
             balances[a] = balances.get(a, 0) + utxo.get("amount", 0)
 
-    # Build response with only non-zero balances
+    # Build response — all derived addresses (with and without balance)
     addresses = []
-    for addr, bal in balances.items():
-        if bal > 0 and addr in addr_map:
-            addresses.append({
-                "path": addr_map[addr],
-                "address": addr,
-                "balance": bal,
-            })
+    for addr, info in addr_map.items():
+        bal = balances.get(addr, 0)
+        entry = {
+            "path": info["path"],
+            "address": addr,
+            "balance": bal,
+            "wif": info["wif"],
+        }
+        addresses.append(entry)
     addresses.sort(key=lambda x: x["path"])
 
-    total_balance = sum(a["balance"] for a in addresses)
+    # Filter: show only addresses with balance
+    with_balance = [a for a in addresses if a["balance"] > 0]
+    total_balance = sum(a["balance"] for a in with_balance)
 
     json_response(handler, {
-        "xpub": xpub,
         "total_balance": total_balance,
         "addresses_checked": len(addr_map),
-        "addresses_with_balance": len(addresses),
-        "addresses": addresses,
+        "addresses_with_balance": len(with_balance),
+        "addresses": with_balance,
     })
 
 
@@ -1272,6 +1345,96 @@ def _build_richlist():
 @route("GET", r"/api/richlist")
 def get_richlist(handler, match):
     result, err = _build_richlist()
+    if err:
+        return error_response(handler, err["message"])
+    json_response(handler, result)
+
+
+# --- Address Transaction History (block scan with cache) ---
+
+_addr_tx_cache = {"height": -1, "data": {}}
+
+
+def _build_address_transactions(address):
+    """Scan all blocks to find transactions involving a specific address."""
+    info, err = rpc_call("getblockchaininfo")
+    if err:
+        return None, err
+
+    height = info["blocks"]
+
+    # Return cache if height unchanged and address is cached
+    if _addr_tx_cache["height"] == height and address in _addr_tx_cache["data"]:
+        return _addr_tx_cache["data"][address], None
+
+    # Reset cache if height changed
+    if _addr_tx_cache["height"] != height:
+        _addr_tx_cache["height"] = height
+        _addr_tx_cache["data"] = {}
+
+    transactions = []
+    balance = 0.0
+
+    for h in range(height + 1):
+        bhash, err = rpc_call("getblockhash", [h])
+        if err:
+            continue
+        block, err = rpc_call("getblock", [bhash, 2])
+        if err:
+            continue
+
+        for tx in block.get("tx", []):
+            sent = 0.0
+            received = 0.0
+
+            # Check inputs (sent from this address)
+            for vin in tx.get("vin", []):
+                if "coinbase" in vin:
+                    continue
+                # Look up the spent output to check if it belongs to our address
+                prev_txid = vin.get("txid")
+                prev_vout = vin.get("vout")
+                if prev_txid is not None and prev_vout is not None:
+                    prev_tx, perr = rpc_call("getrawtransaction", [prev_txid, True])
+                    if not perr and prev_tx:
+                        for pv in prev_tx.get("vout", []):
+                            if pv["n"] == prev_vout:
+                                spk = pv.get("scriptPubKey", {})
+                                if spk.get("address") == address:
+                                    sent += pv["value"]
+                                break
+
+            # Check outputs (received by this address)
+            for vout in tx.get("vout", []):
+                spk = vout.get("scriptPubKey", {})
+                if spk.get("address") == address:
+                    received += vout["value"]
+
+            if sent > 0 or received > 0:
+                balance += received - sent
+                transactions.append({
+                    "txid": tx["txid"],
+                    "blockheight": block["height"],
+                    "time": block["time"],
+                    "sent": round(sent, 8),
+                    "received": round(received, 8),
+                    "balance": round(balance, 8),
+                })
+
+    result = {
+        "address": address,
+        "tx_count": len(transactions),
+        "transactions": transactions,
+    }
+
+    _addr_tx_cache["data"][address] = result
+    return result, None
+
+
+@route("GET", r"/api/address/([a-zA-Z0-9]+)/transactions")
+def get_address_transactions(handler, match):
+    address = match.group(1)
+    result, err = _build_address_transactions(address)
     if err:
         return error_response(handler, err["message"])
     json_response(handler, result)

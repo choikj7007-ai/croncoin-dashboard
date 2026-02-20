@@ -7,7 +7,7 @@
     <link rel="shortcut icon" href="img/favicon.png">
     <link rel="icon" type="image/png" sizes="256x256" href="img/favicon.png">
     <link rel="apple-touch-icon" href="img/cron.png">
-    <link rel="stylesheet" href="css/style.css?v=20260221b">
+    <link rel="stylesheet" href="css/style.css?v=20260221n">
 </head>
 <body>
 
@@ -18,10 +18,10 @@
         <div class="tabs">
             <a class="tab active" href="#about" data-tab="about" data-i18n="tab.about">CronCoin</a>
             <a class="tab" href="#blocks" data-tab="blocks" data-i18n="tab.blocks">Block Explorer</a>
+            <a class="tab" href="#network" data-tab="network" data-i18n="tab.network">Network</a>
             <a class="tab" href="#wallet" data-tab="wallet" data-i18n="tab.wallet">Create Wallet</a>
             <a class="tab" href="#send" data-tab="send" data-i18n="tab.send">Send CronCoin</a>
             <a class="tab" href="#richlist" data-tab="richlist" data-i18n="tab.richlist">Rich List</a>
-            <a class="tab" href="#network" data-tab="network" data-i18n="tab.network">Network</a>
             <a class="tab" href="#dice" data-tab="dice" data-i18n="tab.dice">Dice</a>
             <a class="tab" href="#guide" data-tab="guide" data-i18n="tab.guide">Guide</a>
         </div>
@@ -412,24 +412,14 @@
                 <button class="btn btn-primary" id="hd-mnemonic-recover-btn" data-i18n="hd.recoverBtn">Lookup</button>
             </div>
 
-            <!-- xpub Input Card -->
+            <!-- xprv Input Card -->
             <div class="recover-input-card" id="hd-xpub-input-card" style="display:none">
                 <div class="recover-input-header">
-                    <span class="recover-input-title" data-i18n="hd.xpubInputLabel">Enter your xpub (tpub) key</span>
+                    <span class="recover-input-title" data-i18n="hd.xpubInputLabel">Enter your master xprv key</span>
                     <button class="btn-close" id="hd-xpub-input-close">&times;</button>
                 </div>
-                <input type="text" id="hd-xpub-input" class="recover-input-field" data-i18n-placeholder="hd.xpubInputLabel" placeholder="Enter your xpub (tpub) key">
+                <input type="text" id="hd-xpub-input" class="recover-input-field" data-i18n-placeholder="hd.xpubInputLabel" placeholder="Enter your master xprv key">
                 <button class="btn btn-primary" id="hd-xpub-recover-btn" data-i18n="hd.recoverBtn">Lookup</button>
-            </div>
-
-            <!-- xpub Balance Input Card -->
-            <div class="recover-input-card" id="hd-xpub-balance-card" style="display:none">
-                <div class="recover-input-header">
-                    <span class="recover-input-title" data-i18n="bal.xpubInputLabel">Enter xpub (tpub) key</span>
-                    <button class="btn-close" id="hd-xpub-balance-close">&times;</button>
-                </div>
-                <input type="text" id="hd-xpub-balance-input" class="recover-input-field" data-i18n-placeholder="bal.xpubInputLabel" placeholder="Enter xpub (tpub) key">
-                <button class="btn btn-primary" id="hd-xpub-balance-check-btn" data-i18n="bal.checkBtn">Check Balance</button>
             </div>
 
             <!-- Address Balance Input Card -->
@@ -445,7 +435,7 @@
 
         <!-- xpub Balance Result -->
         <div id="hd-xpub-balance-result" class="card" style="display:none">
-            <div class="card-title" data-i18n="bal.xpubBtn">Check Balance by xpub</div>
+            <div class="card-title" id="xpub-result-title"></div>
             <div class="info-grid" id="xpub-balance-summary"></div>
             <div id="xpub-balance-table-wrap" class="table-wrap" style="margin-top:16px">
                 <table>
@@ -578,6 +568,34 @@
 
     <!-- 5. Rich List -->
     <div class="tab-content" id="tab-richlist">
+        <!-- Address Detail (hidden by default) -->
+        <div id="address-detail" class="card" style="display:none">
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+                <span data-i18n="address.detail">Address Detail</span>
+                <button class="btn btn-secondary" id="address-detail-close" style="padding:4px 12px;font-size:12px">&times; Close</button>
+            </div>
+            <div id="address-detail-info"></div>
+            <div style="margin-top:16px">
+                <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+                    <span data-i18n="address.transactions">Transactions</span>
+                    <span id="address-tx-count" style="font-size:14px;font-weight:400;color:var(--text-muted)"></span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr>
+                            <th data-i18n="block.height">Block</th>
+                            <th data-i18n="th.txid">TxID</th>
+                            <th data-i18n="address.type">Type</th>
+                            <th data-i18n="th.amount">Amount (CRN)</th>
+                            <th data-i18n="address.balanceAfter">Balance</th>
+                            <th data-i18n="dice.time">Time</th>
+                        </tr></thead>
+                        <tbody id="address-tx-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
                 <span data-i18n="richlist.title">Top Addresses by Balance</span>
@@ -695,12 +713,17 @@
     <div class="status-item"><span data-i18n="status.supply">Supply</span>: <span id="status-supply">—</span></div>
 </div>
 
-<!-- Toast -->
-<div id="toast" class="toast"></div>
+<!-- Toast Modal -->
+<div id="toast-overlay" class="toast-overlay">
+    <div class="toast-box">
+        <div id="toast-message" class="toast-message"></div>
+        <button id="toast-confirm" class="toast-confirm-btn">OK</button>
+    </div>
+</div>
 
 <script src="js/qrcode.min.js"></script>
-<script src="js/i18n.js?v=20260221b"></script>
-<script src="js/utils.js?v=20260221b"></script>
-<script src="js/app.js?v=20260221b"></script>
+<script src="js/i18n.js?v=20260221n"></script>
+<script src="js/utils.js?v=20260221n"></script>
+<script src="js/app.js?v=20260221n"></script>
 </body>
 </html>
