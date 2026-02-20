@@ -101,7 +101,7 @@ body {
 
 .chain-badge.mainnet {
     background: var(--success);
-    color: white;
+    color: #1a1a2e;
 }
 
 /* Notice Banner */
@@ -1821,28 +1821,251 @@ td.mono {
     font-size: 16px;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        height: auto;
-        padding: 12px;
-    }
-
-    .tabs {
-        flex-wrap: wrap;
-    }
-
-    .info-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .form-row {
-        flex-direction: column;
-    }
-
-    .status-bar {
-        flex-wrap: wrap;
-        gap: 12px;
-    }
+/* Vision Section (About page) */
+.vision-card {
+    background: linear-gradient(180deg, var(--bg-secondary) 0%, rgba(15,52,96,0.3) 100%);
+    border-color: rgba(233,69,96,0.15);
 }
+.vision-headline {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(233,69,96,0.2);
+}
+.vision-body {
+    margin-bottom: 24px;
+}
+.vision-body p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.9;
+    margin-bottom: 12px;
+    text-align: center;
+}
+.vision-body p:last-child {
+    margin-bottom: 0;
+}
+.vision-body p strong {
+    color: var(--text-primary);
+}
+.vision-body p em {
+    color: var(--accent);
+    font-style: normal;
+    font-weight: 600;
+}
+.vision-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.vision-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 16px;
+    text-align: center;
+    transition: border-color 0.2s, transform 0.2s;
+}
+.vision-item:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+.vision-icon {
+    font-size: 30px;
+    margin-bottom: 10px;
+}
+.vision-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+.vision-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+.vision-closing {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 1px;
+    font-style: italic;
+}
+
+/* Cron Dice Section (About page) */
+.cron-dice-card {
+    overflow: hidden;
+}
+.cron-dice-header {
+    background: linear-gradient(135deg, #0d1520 0%, #15253d 40%, #1a3355 100%);
+    margin: -24px -24px 24px -24px;
+    padding: 32px 32px 28px;
+    position: relative;
+    overflow: hidden;
+}
+.cron-dice-header::before {
+    content: '';
+    position: absolute;
+    top: -40%;
+    right: -15%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(233,69,96,0.12) 0%, transparent 70%);
+    pointer-events: none;
+}
+.cron-dice-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(52,152,219,0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+.cron-dice-title-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.cron-dice-icon {
+    font-size: 42px;
+    line-height: 1;
+}
+.cron-dice-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.3px;
+}
+.cron-dice-title small {
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.5);
+    margin-left: 8px;
+}
+.cron-dice-quote {
+    text-align: center;
+    padding: 24px 20px;
+    margin-bottom: 8px;
+}
+.cron-dice-quote-line {
+    display: block;
+    font-style: italic;
+    letter-spacing: 2.5px;
+    line-height: 2;
+}
+.cron-dice-quote-line:first-child {
+    font-size: 19px;
+    color: rgba(255,255,255,0.75);
+    font-weight: 500;
+}
+.cron-dice-quote-line:last-child {
+    font-size: 16px;
+    color: rgba(255,255,255,0.45);
+}
+
+.dice-body p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: 16px;
+}
+.dice-body p:last-child {
+    margin-bottom: 0;
+}
+.dice-body p strong {
+    color: var(--text-primary);
+}
+.dice-body p em {
+    color: var(--accent);
+    font-style: normal;
+    font-weight: 600;
+}
+
+.dice-process-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 12px;
+}
+.dice-process-table th {
+    background: rgba(233,69,96,0.1);
+    color: var(--accent);
+    font-size: 13px;
+    padding: 10px 14px;
+    text-align: center;
+    border-bottom: 2px solid rgba(233,69,96,0.2);
+}
+.dice-process-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+.dice-process-table td:first-child {
+    text-align: center;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 16px;
+    width: 40px;
+}
+.dice-process-table td:nth-child(2) {
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.dice-process-table tr:hover td {
+    background: rgba(255,255,255,0.03);
+}
+.dice-process-table code {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--warning);
+    background: rgba(243,156,18,0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.dice-fair-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+.dice-fair-item {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 16px;
+    text-align: center;
+    transition: border-color 0.2s, transform 0.2s;
+}
+.dice-fair-item:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+.dice-fair-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+.dice-fair-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+.dice-fair-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
