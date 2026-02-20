@@ -471,6 +471,140 @@ body {
     gap: 14px;
 }
 
+#richlist-summary .info-item:nth-child(2) {
+    text-align: center;
+}
+
+#richlist-summary .info-item:last-child {
+    text-align: right;
+}
+
+#tab-richlist table {
+    font-size: 22px;
+}
+
+#tab-richlist th {
+    font-size: 20px;
+    padding: 14px 16px;
+}
+
+#tab-richlist td {
+    padding: 14px 16px;
+    font-size: 22px;
+}
+
+#tab-richlist td.mono {
+    font-size: 22px;
+}
+
+#tab-richlist .info-label {
+    font-size: 20px;
+}
+
+#tab-richlist .info-value {
+    font-size: 24px;
+}
+
+#tab-richlist .info-value.large,
+#tab-richlist .info-value.large-white {
+    font-size: 36px;
+}
+
+#tab-richlist .card-title {
+    font-size: 24px;
+}
+
+/* Network tab font sizes */
+#tab-network table {
+    font-size: 22px;
+}
+
+#tab-network th {
+    font-size: 20px;
+    padding: 14px 16px;
+}
+
+#tab-network td {
+    padding: 14px 16px;
+    font-size: 22px;
+}
+
+#tab-network td.mono {
+    font-size: 22px;
+}
+
+#tab-network .info-label {
+    font-size: 20px;
+}
+
+#tab-network .info-value {
+    font-size: 24px;
+}
+
+#tab-network .info-value.large {
+    font-size: 36px;
+}
+
+#tab-network .info-value.mono {
+    font-size: 20px;
+}
+
+#tab-network .card-title {
+    font-size: 24px;
+}
+
+/* Dice tab font sizes */
+#tab-dice table {
+    font-size: 22px;
+}
+
+#tab-dice th {
+    font-size: 20px;
+    padding: 14px 16px;
+}
+
+#tab-dice td {
+    padding: 14px 16px;
+    font-size: 22px;
+}
+
+#tab-dice td.mono {
+    font-size: 22px;
+}
+
+#tab-dice .card:first-child {
+    background: transparent;
+    border: none;
+}
+
+#tab-dice .card:first-child .card-title {
+    border-bottom: none;
+}
+
+#tab-dice .card-title {
+    font-size: 24px;
+    text-align: center;
+}
+
+#tab-dice .dice-dot-inline {
+    width: 38px;
+    height: 38px;
+    line-height: 38px;
+    font-size: 22px;
+}
+
+#tab-dice .dice-quote-line {
+    font-size: 20px;
+}
+
+#tab-dice .dice-quote-line:first-child {
+    font-size: 22px;
+}
+
+#tab-dice .dice-countdown .countdown-label {
+    font-size: 20px;
+}
+
 .info-item {
     display: flex;
     flex-direction: column;
@@ -501,11 +635,68 @@ body {
     color: var(--accent);
 }
 
+.info-value.large-white {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+/* Block header row: title left, search right */
+.block-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+    gap: 16px;
+}
+
+.block-header-row .card-title {
+    margin: 0;
+    flex-shrink: 0;
+    margin-right: auto;
+}
+
 /* Search Bar */
 .search-bar {
     display: flex;
     gap: 8px;
     margin-bottom: 16px;
+}
+
+.search-bar.search-bar-compact {
+    margin-bottom: 0;
+    flex: 0 1 700px;
+}
+
+.search-bar-compact select {
+    min-width: 110px;
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.search-bar-compact input {
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.search-bar-compact .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+.search-bar select {
+    padding: 12px 12px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 140px;
+}
+
+.search-bar select:focus {
+    border-color: var(--accent);
+    outline: none;
 }
 
 .search-bar input {
@@ -758,38 +949,39 @@ td.mono {
     align-items: center;
     gap: 16px;
     padding: 14px;
-    background: var(--bg-card);
+    background: #141422;
+    border: 1px solid #1e1e36;
     border-radius: 6px;
     cursor: pointer;
     transition: background 0.2s;
 }
 
 .block-item:hover {
-    background: var(--border);
+    background: #1a1a30;
 }
 
 .block-height {
-    font-size: 22px;
+    font-size: 38px;
     font-weight: 700;
     color: var(--accent);
-    min-width: 72px;
+    min-width: 100px;
 }
 
 .block-meta {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
 }
 
 .block-hash {
     font-family: var(--mono);
-    font-size: 14px;
+    font-size: 23px;
     color: var(--text-secondary);
 }
 
 .block-info {
-    font-size: 14px;
+    font-size: 22px;
     color: var(--text-muted);
 }
 
@@ -803,6 +995,103 @@ td.mono {
     border-radius: 4px;
     padding: 3px 10px;
     width: fit-content;
+}
+
+.block-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 21px;
+}
+
+.block-meta-label {
+    color: var(--text-muted);
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.block-meta-label::after {
+    content: ':';
+}
+
+.block-meta-raw {
+    font-family: var(--mono);
+    color: #c8a455;
+    font-size: 20px;
+}
+
+.btn-load-more {
+    display: block;
+    width: 100%;
+    padding: 14px 0;
+    margin-top: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--text-muted);
+    font-size: 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.btn-load-more:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+}
+.btn-load-more:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.block-meta-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.meta-badge {
+    display: inline-block;
+    font-size: 13.5px;
+    font-family: var(--mono);
+    font-weight: 500;
+    border-radius: 4px;
+    padding: 3px 10px;
+    line-height: 1.5;
+}
+
+.meta-badge.meta-r {
+    color: #c8a455;
+    background: rgba(30, 25, 12, 0.6);
+    border: 1px solid rgba(200, 164, 85, 0.15);
+}
+
+.meta-badge.meta-p {
+    font-weight: 600;
+}
+
+.meta-badge.meta-p.even {
+    color: #5dab80;
+    background: rgba(12, 30, 18, 0.6);
+    border: 1px solid rgba(93, 171, 128, 0.15);
+}
+
+.meta-badge.meta-p.odd {
+    color: #c06a64;
+    background: rgba(30, 12, 12, 0.6);
+    border: 1px solid rgba(192, 106, 100, 0.15);
+}
+
+.meta-badge.meta-t {
+    color: #9a85b0;
+    background: rgba(20, 15, 28, 0.6);
+    border: 1px solid rgba(154, 133, 176, 0.15);
+}
+
+.meta-badge.meta-h {
+    color: #6a9ec0;
+    background: rgba(12, 20, 30, 0.6);
+    border: 1px solid rgba(106, 158, 192, 0.15);
 }
 
 /* Amount styling */
@@ -1364,6 +1653,28 @@ td.mono {
 
 .dice-oddeven.odd { color: #e74c3c; }
 .dice-oddeven.even { color: #3498db; }
+
+.dice-quote {
+    margin-top: 28px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dice-quote-line {
+    display: block;
+    font-size: 15px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    font-style: italic;
+}
+
+.dice-quote-line:first-child {
+    font-size: 17px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
 
 /* Dice table cell styling */
 .dice-cell {

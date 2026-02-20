@@ -12,6 +12,10 @@ import re
 import hashlib
 import hmac
 import math
+import sqlite3
+import uuid
+import secrets
+import datetime
 
 from bip39_english import WORDS as BIP39_WORDS
 
@@ -712,6 +716,9 @@ MIME_TYPES = {
     ".ogg": "audio/ogg",
 }
 
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "croncoin.db")
+UPLOAD_DIR = os.path.expanduser("~/www/html/uploads")
+
 _rpc_id = 0
 
 
@@ -771,13 +778,110 @@ def rpc_call(method, params=None):
         return None, {"message": str(e), "code": -1}
 
 
-def json_response(handler, data, status=200):
-    """Send a JSON HTTP response."""
+def _get_db():
+    """Get a SQLite3 connection (per-call, short-lived)."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+
+def init_db():
+    """Create tables if they don't exist."""
+    conn = _get_db()
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            nickname TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            salt TEXT NOT NULL,
+            wallet_address TEXT,
+            profile_image TEXT,
+            bio TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS sessions (
+            session_id TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+    """)
+    conn.commit()
+    conn.close()
+    print(f"Database initialized: {DB_PATH}")
+
+
+def _hash_password(password, salt=None):
+    """Hash password with scrypt. Returns (hash_hex, salt_hex)."""
+    if salt is None:
+        salt = secrets.token_bytes(32)
+    else:
+        salt = bytes.fromhex(salt)
+    h = hashlib.scrypt(password.encode(), salt=salt, n=16384, r=8, p=1, dklen=64)
+    return h.hex(), salt.hex()
+
+
+def _verify_password(password, stored_hash, salt_hex):
+    """Verify password against stored hash."""
+    h, _ = _hash_password(password, salt_hex)
+    return hmac.compare_digest(h, stored_hash)
+
+
+def _create_session(user_id):
+    """Create a new session, return session_id."""
+    session_id = str(uuid.uuid4())
+    now = datetime.datetime.utcnow()
+    expires = now + datetime.timedelta(hours=24)
+    conn = _get_db()
+    conn.execute(
+        "INSERT INTO sessions (session_id, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)",
+        (session_id, user_id, now.isoformat(), expires.isoformat()),
+    )
+    conn.commit()
+    conn.close()
+    return session_id
+
+
+def _get_current_user(handler):
+    """Extract session from Cookie header and return user row or None."""
+    cookie_header = handler.headers.get("Cookie", "")
+    session_id = None
+    for part in cookie_header.split(";"):
+        part = part.strip()
+        if part.startswith("session_id="):
+            session_id = part.split("=", 1)[1].strip()
+            break
+    if not session_id:
+        return None
+    conn = _get_db()
+    now = datetime.datetime.utcnow().isoformat()
+    row = conn.execute(
+        "SELECT u.* FROM users u JOIN sessions s ON u.id = s.user_id "
+        "WHERE s.session_id = ? AND s.expires_at > ?",
+        (session_id, now),
+    ).fetchone()
+    conn.close()
+    if row is None:
+        return None
+    return dict(row)
+
+
+def json_response(handler, data, status=200, cookies=None):
+    """Send a JSON HTTP response with optional Set-Cookie headers."""
     body = json.dumps(data, default=str).encode()
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json")
     handler.send_header("Content-Length", str(len(body)))
     handler.send_header("Access-Control-Allow-Origin", "*")
+    handler.send_header("Access-Control-Allow-Credentials", "true")
+    if cookies:
+        for c in cookies:
+            handler.send_header("Set-Cookie", c)
     handler.end_headers()
     handler.wfile.write(body)
 
@@ -1349,6 +1453,195 @@ def send_privkey(handler, match):
     })
 
 
+# --- Auth endpoints ---
+
+@route("POST", r"/api/auth/register")
+def auth_register(handler, match):
+    """Register a new user."""
+    body = _read_body(handler)
+    if body is None:
+        return error_response(handler, "Invalid JSON body", 400)
+    email = (body.get("email") or "").strip().lower()
+    nickname = (body.get("nickname") or "").strip()
+    password = body.get("password", "")
+
+    if not email or not nickname or not password:
+        return error_response(handler, "email, nickname, and password are required", 400)
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        return error_response(handler, "Invalid email format", 400)
+    if len(nickname) < 2 or len(nickname) > 30:
+        return error_response(handler, "Nickname must be 2-30 characters", 400)
+    if len(password) < 6:
+        return error_response(handler, "Password must be at least 6 characters", 400)
+
+    password_hash, salt = _hash_password(password)
+    now = datetime.datetime.utcnow().isoformat()
+    conn = _get_db()
+    try:
+        conn.execute(
+            "INSERT INTO users (email, nickname, password_hash, salt, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (email, nickname, password_hash, salt, now, now),
+        )
+        conn.commit()
+        user_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    except sqlite3.IntegrityError as e:
+        conn.close()
+        msg = str(e)
+        if "email" in msg:
+            return error_response(handler, "Email already registered", 409)
+        if "nickname" in msg:
+            return error_response(handler, "Nickname already taken", 409)
+        return error_response(handler, "Registration failed", 409)
+    conn.close()
+
+    session_id = _create_session(user_id)
+    cookie = f"session_id={session_id}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400"
+    json_response(handler, {
+        "ok": True,
+        "user": {"id": user_id, "email": email, "nickname": nickname},
+    }, cookies=[cookie])
+
+
+@route("POST", r"/api/auth/login")
+def auth_login(handler, match):
+    """Login with email and password."""
+    body = _read_body(handler)
+    if body is None:
+        return error_response(handler, "Invalid JSON body", 400)
+    email = (body.get("email") or "").strip().lower()
+    password = body.get("password", "")
+    if not email or not password:
+        return error_response(handler, "email and password are required", 400)
+
+    conn = _get_db()
+    row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+    conn.close()
+    if row is None or not _verify_password(password, row["password_hash"], row["salt"]):
+        return error_response(handler, "Invalid email or password", 401)
+
+    session_id = _create_session(row["id"])
+    cookie = f"session_id={session_id}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400"
+    json_response(handler, {
+        "ok": True,
+        "user": {
+            "id": row["id"], "email": row["email"], "nickname": row["nickname"],
+            "wallet_address": row["wallet_address"], "profile_image": row["profile_image"],
+            "bio": row["bio"],
+        },
+    }, cookies=[cookie])
+
+
+@route("POST", r"/api/auth/logout")
+def auth_logout(handler, match):
+    """Logout: delete session."""
+    cookie_header = handler.headers.get("Cookie", "")
+    session_id = None
+    for part in cookie_header.split(";"):
+        part = part.strip()
+        if part.startswith("session_id="):
+            session_id = part.split("=", 1)[1].strip()
+            break
+    if session_id:
+        conn = _get_db()
+        conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
+        conn.commit()
+        conn.close()
+    expire_cookie = "session_id=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+    json_response(handler, {"ok": True}, cookies=[expire_cookie])
+
+
+@route("GET", r"/api/auth/me")
+def auth_me(handler, match):
+    """Get current logged-in user info."""
+    user = _get_current_user(handler)
+    if not user:
+        return error_response(handler, "Not authenticated", 401)
+    json_response(handler, {
+        "id": user["id"], "email": user["email"], "nickname": user["nickname"],
+        "wallet_address": user["wallet_address"], "profile_image": user["profile_image"],
+        "bio": user["bio"], "created_at": user["created_at"],
+    })
+
+
+@route("POST", r"/api/auth/profile")
+def auth_profile(handler, match):
+    """Update profile (nickname, bio, wallet_address)."""
+    user = _get_current_user(handler)
+    if not user:
+        return error_response(handler, "Not authenticated", 401)
+    body = _read_body(handler)
+    if body is None:
+        return error_response(handler, "Invalid JSON body", 400)
+
+    nickname = body.get("nickname", user["nickname"]).strip()
+    bio = body.get("bio", user["bio"] or "")
+    wallet_address = body.get("wallet_address", user["wallet_address"] or "")
+
+    if len(nickname) < 2 or len(nickname) > 30:
+        return error_response(handler, "Nickname must be 2-30 characters", 400)
+
+    now = datetime.datetime.utcnow().isoformat()
+    conn = _get_db()
+    try:
+        conn.execute(
+            "UPDATE users SET nickname=?, bio=?, wallet_address=?, updated_at=? WHERE id=?",
+            (nickname, bio, wallet_address, now, user["id"]),
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return error_response(handler, "Nickname already taken", 409)
+    conn.close()
+    json_response(handler, {"ok": True, "nickname": nickname, "bio": bio, "wallet_address": wallet_address})
+
+
+@route("POST", r"/api/auth/profile-image")
+def auth_profile_image(handler, match):
+    """Upload profile image (multipart/form-data or raw binary with X-Filename header)."""
+    user = _get_current_user(handler)
+    if not user:
+        return error_response(handler, "Not authenticated", 401)
+
+    content_type = handler.headers.get("Content-Type", "")
+    length = int(handler.headers.get("Content-Length", 0))
+    if length == 0 or length > 5 * 1024 * 1024:  # 5MB limit
+        return error_response(handler, "Image must be between 1 byte and 5MB", 400)
+
+    raw_data = handler.rfile.read(length)
+
+    # Determine file extension from content type or filename header
+    ext = ".png"
+    if "image/jpeg" in content_type or "image/jpg" in content_type:
+        ext = ".jpg"
+    elif "image/gif" in content_type:
+        ext = ".gif"
+    elif "image/webp" in content_type:
+        ext = ".webp"
+
+    filename = f"profile_{user['id']}_{secrets.token_hex(8)}{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+    # Remove old profile image if exists
+    if user.get("profile_image"):
+        old_path = os.path.join(UPLOAD_DIR, os.path.basename(user["profile_image"]))
+        if os.path.isfile(old_path):
+            os.remove(old_path)
+
+    with open(filepath, "wb") as f:
+        f.write(raw_data)
+
+    image_url = f"/uploads/{filename}"
+    now = datetime.datetime.utcnow().isoformat()
+    conn = _get_db()
+    conn.execute("UPDATE users SET profile_image=?, updated_at=? WHERE id=?",
+                 (image_url, now, user["id"]))
+    conn.commit()
+    conn.close()
+    json_response(handler, {"ok": True, "profile_image": image_url})
+
+
 def _read_body(handler):
     length = int(handler.headers.get("Content-Length", 0))
     if length == 0:
@@ -1371,6 +1664,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Credentials", "true")
         self.end_headers()
 
     def _route(self, method):
@@ -1421,6 +1715,7 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
 
 
 def main():
+    init_db()
     print(f"CronCoin Dashboard API starting on port {LISTEN_PORT}")
     print(f"RPC target: {RPC_HOST}:{RPC_PORT}")
 

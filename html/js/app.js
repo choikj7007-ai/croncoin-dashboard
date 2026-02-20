@@ -64,22 +64,38 @@
     // 1. BLOCK EXPLORER
     // ========================================================
 
-    document.getElementById('block-search-btn').addEventListener('click', searchBlock);
-    document.getElementById('block-search').addEventListener('keydown', e => {
-        if (e.key === 'Enter') searchBlock();
+    // Unified search
+    const searchTypeEl = document.getElementById('search-type');
+    const searchInputEl = document.getElementById('explorer-search');
+
+    // Update placeholder based on search type
+    function updateSearchPlaceholder() {
+        const type = searchTypeEl.value;
+        if (type === 'height') searchInputEl.placeholder = t('search.ph.height');
+        else if (type === 'hash') searchInputEl.placeholder = t('search.ph.hash');
+        else searchInputEl.placeholder = t('search.ph.tx');
+    }
+    searchTypeEl.addEventListener('change', updateSearchPlaceholder);
+
+    document.getElementById('explorer-search-btn').addEventListener('click', doSearch);
+    searchInputEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter') doSearch();
     });
 
-    async function searchBlock() {
-        const q = document.getElementById('block-search').value.trim();
+    async function doSearch() {
+        const q = searchInputEl.value.trim();
         if (!q) return;
+        const type = searchTypeEl.value;
         try {
-            let data;
-            if (/^\d+$/.test(q)) {
-                data = await apiGet('blockheight/' + q);
+            if (type === 'tx') {
+                await viewTransaction(q);
+            } else if (type === 'height') {
+                const data = await apiGet('blockheight/' + q);
+                showBlockDetail(data);
             } else {
-                data = await apiGet('block/' + q);
+                const data = await apiGet('block/' + q);
+                showBlockDetail(data);
             }
-            showBlockDetail(data);
         } catch (err) {
             showToast(t('block.notFound') + ': ' + err.message, true);
         }
@@ -88,6 +104,10 @@
     function showBlockDetail(block) {
         const el = document.getElementById('block-detail');
         el.style.display = 'block';
+
+        const dice = getDiceFromHash(block.hash);
+        const isOdd = dice % 2 !== 0;
+        const oddEvenText = isOdd ? t('dice.odd') : t('dice.even');
 
         renderInfoGrid('block-detail-info', [
             { label: t('block.height'), value: block.height, cls: 'large' },
@@ -102,25 +122,11 @@
             { label: t('block.merkleRoot'), value: block.merkleroot, cls: 'mono' },
             { label: t('block.nonce'), value: block.nonce },
             { label: t('block.bits'), value: block.bits },
+            { label: t('dice.value'), value: dice + ' (' + oddEvenText + ')' },
         ]);
 
-        // Check for OP_RETURN metadata in coinbase
         const metaEl = document.getElementById('block-metadata');
         metaEl.innerHTML = '';
-        if (block.tx && block.tx.length > 0) {
-            const coinbase = block.tx[0];
-            if (coinbase.vout) {
-                for (const out of coinbase.vout) {
-                    const spk = out.scriptPubKey;
-                    if (spk && spk.type === 'nulldata' && spk.hex) {
-                        const meta = parseOpReturnMetadata(spk.hex);
-                        if (meta) {
-                            metaEl.innerHTML = `<div class="metadata-box">${escapeHtml(t('block.coinbaseMeta'))}: ${escapeHtml(meta)}</div>`;
-                        }
-                    }
-                }
-            }
-        }
 
         // Transaction list
         const tbody = document.getElementById('block-tx-list');
@@ -145,66 +151,79 @@
         el.scrollIntoView({ behavior: 'smooth' });
     }
 
+    let _blocksNextHeight = -1;
+    const BLOCKS_PAGE_SIZE = 10;
+
     async function loadRecentBlocks() {
         try {
             const info = await apiGet('blockchain');
             const container = document.getElementById('recent-blocks');
             container.innerHTML = '';
-
-            const count = Math.min(10, info.blocks + 1);
-            const startHeight = info.blocks;
-
-            for (let i = 0; i < count; i++) {
-                const height = startHeight - i;
-                if (height < 0) break;
-                try {
-                    const block = await apiGet('blockheight/' + height);
-                    const txCount = block.nTx || (block.tx ? block.tx.length : 0);
-                    const meta = getBlockMeta(block);
-                    const metaTag = meta ? `<span class="block-meta-tag">${escapeHtml('CRN:R=' + meta.R + ':P=' + meta.P + ':H=' + meta.H)}</span>` : '';
-
-                    const item = document.createElement('div');
-                    item.className = 'block-item';
-                    item.innerHTML = `
-                        <div class="block-height">#${block.height}</div>
-                        <div class="block-meta">
-                            <div class="block-hash">${truncHash(block.hash, 20)}</div>
-                            <div class="block-info">${txCount} txs &middot; ${formatBytes(block.size)} &middot; ${formatTime(block.time)} (${timeAgo(block.time)})</div>
-                            ${metaTag}
-                        </div>`;
-                    item.addEventListener('click', () => {
-                        document.getElementById('block-search').value = String(block.height);
-                        showBlockDetail(block);
-                    });
-                    container.appendChild(item);
-                } catch (e) {
-                    // skip blocks that fail
-                }
-            }
-
-            if (container.children.length === 0) {
-                container.innerHTML = `<div class="loading">${escapeHtml(t('block.noBlocks'))}</div>`;
-            }
+            _blocksNextHeight = info.blocks;
+            await _appendBlocks(BLOCKS_PAGE_SIZE);
         } catch (err) {
             document.getElementById('recent-blocks').innerHTML =
                 `<div class="loading">${escapeHtml(t('error'))}: ${escapeHtml(err.message)}</div>`;
         }
     }
 
+    async function _appendBlocks(count) {
+        const container = document.getElementById('recent-blocks');
+        const loadMoreBtn = document.getElementById('blocks-load-more');
+        let loaded = 0;
+
+        for (let i = 0; i < count; i++) {
+            const height = _blocksNextHeight - i;
+            if (height < 0) break;
+            try {
+                const block = await apiGet('blockheight/' + height);
+                const txCount = block.nTx || (block.tx ? block.tx.length : 0);
+                const dice = getDiceFromHash(block.hash);
+                const isOdd = dice % 2 !== 0;
+                const oddEvenCls = isOdd ? 'odd' : 'even';
+                const oddEvenText = isOdd ? t('dice.odd') : t('dice.even');
+
+                const item = document.createElement('div');
+                item.className = 'block-item';
+                item.innerHTML = `
+                    <div class="block-height">#${block.height}</div>
+                    <div class="block-meta">
+                        <div class="block-hash">${truncHash(block.hash, 20)}</div>
+                        <div class="block-info">${txCount} txs &middot; ${formatBytes(block.size)} &middot; ${formatTime(block.time)} (${timeAgo(block.time)}) &middot; 🎲 ${dice} <span class="dice-oddeven ${oddEvenCls}">${oddEvenText}</span></div>
+                    </div>`;
+                item.addEventListener('click', () => {
+                    searchTypeEl.value = 'height'; searchInputEl.value = String(block.height);
+                    showBlockDetail(block);
+                });
+                container.appendChild(item);
+                loaded++;
+            } catch (e) {
+                // skip blocks that fail
+            }
+        }
+
+        _blocksNextHeight -= count;
+
+        if (container.children.length === 0) {
+            container.innerHTML = `<div class="loading">${escapeHtml(t('block.noBlocks'))}</div>`;
+        }
+
+        if (loadMoreBtn) {
+            loadMoreBtn.style.display = (_blocksNextHeight >= 0) ? '' : 'none';
+            loadMoreBtn.textContent = t('loadMore');
+        }
+    }
+
+    document.getElementById('blocks-load-more').addEventListener('click', async function() {
+        this.disabled = true;
+        this.textContent = '...';
+        await _appendBlocks(BLOCKS_PAGE_SIZE);
+        this.disabled = false;
+    });
+
     // ========================================================
     // 2. TRANSACTION EXPLORER
     // ========================================================
-
-    document.getElementById('tx-search-btn').addEventListener('click', searchTx);
-    document.getElementById('tx-search').addEventListener('keydown', e => {
-        if (e.key === 'Enter') searchTx();
-    });
-
-    async function searchTx() {
-        const txid = document.getElementById('tx-search').value.trim();
-        if (!txid) return;
-        await viewTransaction(txid);
-    }
 
     async function viewTransaction(txid) {
         // Switch to blocks tab (explorer)
@@ -213,7 +232,8 @@
         document.querySelector('[data-tab="blocks"]').classList.add('active');
         document.getElementById('tab-blocks').classList.add('active');
 
-        document.getElementById('tx-search').value = txid;
+        searchTypeEl.value = 'tx';
+        searchInputEl.value = txid;
 
         try {
             const tx = await apiGet('tx/' + txid);
@@ -992,10 +1012,13 @@
 
             renderInfoGrid('richlist-summary', [
                 { label: t('richlist.scannedHeight'), value: data.height, cls: 'large' },
-                { label: t('richlist.chain'), value: (_currentChain || 'regtest').toUpperCase() },
-                { label: t('richlist.totalSupply'), value: Math.round(data.total_supply).toLocaleString('en-US') + ' CRN' },
-                { label: t('richlist.totalAddresses'), value: data.total_addresses },
+                { label: t('richlist.totalSupply'), value: Math.round(data.total_supply).toLocaleString('en-US') + ' CRN', cls: 'large-white' },
+                { label: t('richlist.totalAddresses'), value: data.total_addresses, cls: 'large-white' },
             ]);
+            const chainName = _currentChain || (await apiGet('blockchain')).chain || '';
+            const chainLabel = chainName === 'main' ? 'MAINNET' : chainName === 'test' ? 'TESTNET' : chainName.toUpperCase();
+            document.getElementById('richlist-addr-count').textContent =
+                t('richlist.chain') + ': ' + chainLabel;
 
             tbody.innerHTML = '';
             const supply = data.total_supply || 1;
@@ -1179,13 +1202,23 @@
         }, 5000);
     }
 
+    let _diceNextHeight = -1;
+    const DICE_PAGE_SIZE = 20;
+
     async function loadDiceHistory(height) {
         const tbody = document.getElementById('dice-table');
         tbody.innerHTML = '';
-        const count = Math.min(20, height + 1);
+        _diceNextHeight = height;
+        await _appendDiceRows(DICE_PAGE_SIZE);
+    }
 
-        for (let i = 0; i < count; i++) {
-            const h = height - i;
+    async function _appendDiceRows(count) {
+        const tbody = document.getElementById('dice-table');
+        const loadMoreBtn = document.getElementById('dice-load-more');
+        const actualCount = Math.min(count, _diceNextHeight + 1);
+
+        for (let i = 0; i < actualCount; i++) {
+            const h = _diceNextHeight - i;
             if (h < 0) break;
             try {
                 const block = await apiGet('blockheight/' + h);
@@ -1197,27 +1230,40 @@
                 const oeCls = isOdd ? 'odd' : 'even';
                 const timeDisplay = m && m.T ? escapeHtml(m.T) : formatTime(block.time);
 
+                let metaT = '';
+                const dt = new Date(block.time * 1000 + 9 * 3600 * 1000);
+                metaT = dt.getUTCFullYear() + '-'
+                        + String(dt.getUTCMonth() + 1).padStart(2, '0') + '-'
+                        + String(dt.getUTCDate()).padStart(2, '0') + ' '
+                        + String(dt.getUTCHours()).padStart(2, '0') + ':'
+                        + String(dt.getUTCMinutes()).padStart(2, '0');
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong>#${bh}</strong></td>
                     <td><span class="dice-dot-inline">${dice}</span></td>
                     <td><span class="dice-oddeven ${oeCls}">${oeText}</span></td>
                     <td>${timeDisplay}</td>
-                    <td class="mono"><span class="hash-link">${escapeHtml(truncHash(block.hash, 12))}</span></td>`;
-                tr.querySelector('.hash-link').addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tabContents.forEach(tc => tc.classList.remove('active'));
-                    document.querySelector('[data-tab="blocks"]').classList.add('active');
-                    document.getElementById('tab-blocks').classList.add('active');
-                    document.getElementById('block-search').value = String(block.height);
-                    searchBlock();
-                });
+                    <td class="mono"><span class="hash-link" style="cursor:default">${truncHash(block.hash, 12)}</span></td>`;
                 tbody.appendChild(tr);
             } catch (e) {
                 // skip
             }
         }
+
+        _diceNextHeight -= actualCount;
+
+        if (loadMoreBtn) {
+            loadMoreBtn.style.display = (_diceNextHeight >= 0) ? '' : 'none';
+            loadMoreBtn.textContent = t('loadMore');
+        }
     }
+
+    document.getElementById('dice-load-more').addEventListener('click', async function() {
+        this.disabled = true;
+        this.textContent = '...';
+        await _appendDiceRows(DICE_PAGE_SIZE);
+        this.disabled = false;
+    });
 
     function startDicePolling() {
         if (_dicePollingTimer) clearInterval(_dicePollingTimer);

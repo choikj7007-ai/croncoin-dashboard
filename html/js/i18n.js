@@ -13,6 +13,13 @@ const I18N = {
 
         // Common
         'search': 'Search',
+        'search.height': 'Block Height',
+        'search.hash': 'Block Hash',
+        'search.tx': 'Transaction ID',
+        'search.placeholder': 'Search...',
+        'search.ph.height': 'Enter block height...',
+        'search.ph.hash': 'Enter block hash...',
+        'search.ph.tx': 'Enter transaction ID...',
         'loading': 'Loading...',
         'yes': 'Yes',
         'no': 'No',
@@ -25,6 +32,7 @@ const I18N = {
         'block.recentBlocks': 'Recent Blocks',
         'block.notFound': 'Block not found',
         'block.noBlocks': 'No blocks found',
+        'loadMore': 'Load More',
         'block.height': 'Height',
         'block.hash': 'Hash',
         'block.prevHash': 'Previous Hash',
@@ -351,6 +359,13 @@ const I18N = {
 
         // Common
         'search': '\uAC80\uC0C9',
+        'search.height': '\uBE14\uB85D\uB192\uC774',
+        'search.hash': '\uBE14\uB85D\uD574\uC2DC',
+        'search.tx': '\uD2B8\uB79C\uC7AD\uC158',
+        'search.placeholder': '\uAC80\uC0C9...',
+        'search.ph.height': '\uBE14\uB85D \uB192\uC774 \uC785\uB825...',
+        'search.ph.hash': '\uBE14\uB85D \uD574\uC2DC \uC785\uB825...',
+        'search.ph.tx': '\uD2B8\uB79C\uC7AD\uC158 ID \uC785\uB825...',
         'loading': '\uB85C\uB529 \uC911...',
         'yes': '\uC608',
         'no': '\uC544\uB2C8\uC624',
@@ -363,6 +378,7 @@ const I18N = {
         'block.recentBlocks': '\uCD5C\uADFC \uBE14\uB85D',
         'block.notFound': '\uBE14\uB85D\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4',
         'block.noBlocks': '\uBE14\uB85D\uC774 \uC5C6\uC2B5\uB2C8\uB2E4',
+        'loadMore': '더보기',
         'block.height': '\uB192\uC774',
         'block.hash': '\uD574\uC2DC',
         'block.prevHash': '\uC774\uC804 \uD574\uC2DC',
@@ -566,7 +582,7 @@ const I18N = {
 
         // Rich List
         'tab.richlist': '\uBCF4\uC720\uB7C9 \uC21C\uC704',
-        'richlist.title': '\uC8FC\uC18C\uBCC4 \uBCF4\uC720\uB7C9 \uC21C\uC704',
+        'richlist.title': '\uBCF4\uC720\uB7C9 \uC21C\uC704',
         'richlist.rank': '#',
         'richlist.balance': '\uC794\uC561 (CRN)',
         'richlist.percent': '\uBE44\uC728 (%)',
@@ -665,7 +681,7 @@ const I18N = {
         'guide.network.title': '네트워크',
         'guide.network.desc': '블록체인 정보(체인 종류, 블록 수, 헤더, 최고 블록 해시, 난이도, 중앙값 시간, 검증 진행률, 총 발행량, 프루닝, 디스크 사용량), 네트워크 정보(버전, 프로토콜, 연결 수), 멤풀 통계(크기, 수수료), 연결된 피어의 주소, 서브버전, 핑, 송수신량을 확인합니다.',
         'guide.dice.title': '주사위',
-        'guide.dice.desc': '각 블록의 코인베이스 OP_RETURN 메타데이터에서 주사위 값(1~6)을 추출하는 재미 기능입니다. 상단에는 다음 블록 주사위와 카운트다운 타이머(3분 블록 간격)가 표시됩니다. 새 블록이 채굴되면 박수 소리와 함께 5초간 결과가 공개된 후 다시 카운트다운 모드로 돌아갑니다. 히스토리 테이블에서 최근 20개 블록의 주사위 값, 홀짝, 시간, 블록 해시를 확인할 수 있습니다.',
+        'guide.dice.desc': '크론 주사위는 인간의 손이 아닌, 블록체인이 던지는 주사위입니다. 매 블록이 생성될 때마다 그 해시로부터 하나의 숫자(1~6)가 태어납니다. 이 숫자는 누군가의 의지로 정해지지 않으며, 어떤 권력으로도 바꿀 수 없습니다. 한 번 새겨진 결과는 블록체인 위에 영원히 남아, 그 누구도 조작도 거짓도 허락되지 않습니다. 3분마다 새로운 블록과 함께 새로운 운명이 펼쳐지며, 모든 기록은 히스토리 테이블에서 확인할 수 있습니다.',
         'guide.common.title': '공통 기능',
         'guide.common.desc': '언어 전환: 오른쪽 상단 버튼으로 영문/한글 전환 가능 (브라우저에 저장). 상태바: 하단에 체인 종류, 블록 높이, 연결 수, 멤풀 크기, 총 발행량 표시 (30초마다 자동 갱신). 체인 배지: 헤더에 REGTEST/TESTNET/MAINNET 표시. 탭 유지: 새로고침 시 선택한 탭이 URL에 저장되어 유지됩니다.',
 

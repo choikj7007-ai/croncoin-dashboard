@@ -49,16 +49,17 @@ function parseOpReturnMetadata(scriptPubKeyHex) {
 
 /**
  * Parse structured CRN metadata string into an object.
- * Input: "CRN:R=4:P=0:T=2026-02-18 18:19:H=111"
- * Output: { R: 4, P: 0, T: "2026-02-18 18:19", H: 111 }
+ * Input: "CRN:T=2026-02-18 18:19:H=111"
+ * Output: { T: "2026-02-18 18:19", H: 111 }
+ * Also supports legacy format with R= and P= fields.
  */
 function parseCoinbaseMetaFields(metaString) {
     if (!metaString) return null;
     const result = {};
-    // Match R=<number>
+    // Match R=<number> (legacy, no longer stored in new blocks)
     const rMatch = metaString.match(/R=(\d+)/);
     if (rMatch) result.R = parseInt(rMatch[1], 10);
-    // Match P=<number> (0=even, 1=odd)
+    // Match P=<number> (legacy, no longer stored in new blocks)
     const pMatch = metaString.match(/P=(\d+)/);
     if (pMatch) result.P = parseInt(pMatch[1], 10);
     // Match T=<time string> (everything until next :X= or end)
@@ -71,22 +72,45 @@ function parseCoinbaseMetaFields(metaString) {
 }
 
 /**
- * Extract structured metadata from a block's coinbase OP_RETURN.
+ * Extract structured metadata from a block.
+ * Dice (R) and parity (P) are computed from the block hash (last 6 bytes).
+ * Time (T) and height (H) come from OP_RETURN or block fields.
  * Returns { R, P, T, H } or null.
  */
 function getBlockMeta(block) {
-    if (!block || !block.tx || block.tx.length === 0) return null;
-    const coinbase = block.tx[0];
-    if (!coinbase.vout) return null;
-    for (const out of coinbase.vout) {
-        const spk = out.scriptPubKey;
-        if (spk && spk.type === 'nulldata' && spk.hex) {
-            const raw = parseOpReturnMetadata(spk.hex);
-            const fields = parseCoinbaseMetaFields(raw);
-            if (fields) return fields;
+    if (!block) return null;
+
+    // Compute dice from block hash (authoritative source)
+    const hash = block.hash;
+    const dice = hash ? getDiceFromHash(hash) : null;
+
+    // Parse OP_RETURN for T and H fields
+    let fields = null;
+    if (block.tx && block.tx.length > 0) {
+        const coinbase = block.tx[0];
+        if (coinbase.vout) {
+            for (const out of coinbase.vout) {
+                const spk = out.scriptPubKey;
+                if (spk && spk.type === 'nulldata' && spk.hex) {
+                    const raw = parseOpReturnMetadata(spk.hex);
+                    fields = parseCoinbaseMetaFields(raw);
+                    if (fields) break;
+                }
+            }
         }
     }
-    return null;
+
+    const result = fields || {};
+    // Always override R and P with hash-based calculation
+    if (dice !== null) {
+        result.R = dice;
+        result.P = dice % 2;
+    }
+    // Fill H from block.height if not already set
+    if (result.H === undefined && block.height !== undefined) {
+        result.H = block.height;
+    }
+    return (Object.keys(result).length > 0) ? result : null;
 }
 
 /**
@@ -194,12 +218,18 @@ function toKoreanNumber(n) {
 
 /**
  * Derive a dice value (1-6) from a block hash.
- * Uses the last byte of the hash.
+ * Uses the last 6 bytes (12 hex chars) for near-perfect uniform distribution.
+ * This is the authoritative dice calculation — no longer stored in OP_RETURN.
  */
 function getDiceFromHash(hash) {
-    if (!hash || hash.length < 2) return 1;
-    const lastByte = parseInt(hash.slice(-2), 16);
-    return (lastByte % 6) + 1;
+    if (!hash || hash.length < 12) return 1;
+    // Last 6 bytes of the hash (last 12 hex characters)
+    const last6hex = hash.slice(-12);
+    let val = 0n;
+    for (let i = 0; i < 12; i += 2) {
+        val = (val << 8n) | BigInt(parseInt(last6hex.substr(i, 2), 16));
+    }
+    return Number(val % 6n) + 1;
 }
 
 /**

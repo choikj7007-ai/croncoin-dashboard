@@ -7,7 +7,7 @@
     <link rel="shortcut icon" href="img/favicon.png">
     <link rel="icon" type="image/png" sizes="256x256" href="img/favicon.png">
     <link rel="apple-touch-icon" href="img/cron.png">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260221a">
 </head>
 <body>
 
@@ -129,19 +129,6 @@
             </div>
         </div>
 
-        <!-- OP_RETURN Metadata -->
-        <div class="card">
-            <div class="card-title">Block Metadata (OP_RETURN)</div>
-            <p class="about-desc">CronCoin의 고유 기능 &mdash; 모든 블록의 코인베이스 트랜잭션에 사람이 읽을 수 있는 메타데이터가 기록됩니다.</p>
-            <div class="about-code">CRN:R=&lt;1~6&gt;:P=&lt;0|1&gt;:T=&lt;UTC time&gt;:H=&lt;height&gt;</div>
-            <div class="meta-cards">
-                <div class="meta-card"><span class="meta-key">R</span><span class="meta-desc">의사난수 (1~6)<br>이전 블록 해시 기반</span></div>
-                <div class="meta-card"><span class="meta-key">P</span><span class="meta-desc">R의 짝/홀<br>짝수=0, 홀수=1</span></div>
-                <div class="meta-card"><span class="meta-key">T</span><span class="meta-desc">블록 생성 시각<br>UTC 기준</span></div>
-                <div class="meta-card"><span class="meta-key">H</span><span class="meta-desc">블록 높이<br>10진수</span></div>
-            </div>
-        </div>
-
         <!-- Network & Address -->
         <div class="about-two-col">
             <div class="card">
@@ -199,15 +186,6 @@
 
     <!-- 1. Block Explorer -->
     <div class="tab-content" id="tab-blocks">
-        <div class="search-bar">
-            <input type="text" id="block-search" data-i18n-placeholder="block.searchPlaceholder" placeholder="Search by block hash or height...">
-            <button class="btn btn-primary" id="block-search-btn" data-i18n="search">Search</button>
-        </div>
-        <div class="search-bar" style="margin-top:8px">
-            <input type="text" id="tx-search" data-i18n-placeholder="tx.searchPlaceholder" placeholder="Search by transaction ID...">
-            <button class="btn btn-primary" id="tx-search-btn" data-i18n="search">Search</button>
-        </div>
-
         <!-- Block Detail (hidden by default) -->
         <div id="block-detail" class="card" style="display:none">
             <div class="card-title" data-i18n="block.detail">Block Detail</div>
@@ -266,10 +244,22 @@
 
         <!-- Recent Blocks -->
         <div class="card">
-            <div class="card-title" data-i18n="block.recentBlocks">Recent Blocks</div>
+            <div class="block-header-row">
+                <div class="card-title" data-i18n="block.recentBlocks">Recent Blocks</div>
+                <div class="search-bar search-bar-compact">
+                    <select id="search-type">
+                        <option value="height" data-i18n="search.height">Block Height</option>
+                        <option value="hash" data-i18n="search.hash">Block Hash</option>
+                        <option value="tx" data-i18n="search.tx">Transaction ID</option>
+                    </select>
+                    <input type="text" id="explorer-search" data-i18n-placeholder="search.placeholder" placeholder="Search...">
+                    <button class="btn btn-primary" id="explorer-search-btn" data-i18n="search">Search</button>
+                </div>
+            </div>
             <div id="recent-blocks" class="block-list">
                 <div class="loading" data-i18n="loading">Loading...</div>
             </div>
+            <button class="btn btn-load-more" id="blocks-load-more" style="display:none" data-i18n="loadMore">Load More</button>
         </div>
     </div>
 
@@ -463,7 +453,10 @@
     <!-- 5. Rich List -->
     <div class="tab-content" id="tab-richlist">
         <div class="card">
-            <div class="card-title" data-i18n="richlist.title">Top Addresses by Balance</div>
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+                <span data-i18n="richlist.title">Top Addresses by Balance</span>
+                <span id="richlist-addr-count" style="font-size:14px;font-weight:400;color:var(--text-muted)"></span>
+            </div>
             <div class="info-grid" id="richlist-summary"></div>
         </div>
         <div class="card">
@@ -530,11 +523,14 @@
                 </div>
                 <div class="dice-countdown" id="dice-countdown"></div>
                 <div class="dice-hero-info" id="dice-hero-info"></div>
+                <div class="dice-quote">
+                    <span class="dice-quote-line">우연의 얼굴을 가진 신의 그림자.</span>
+                    <span class="dice-quote-line">영원의 사슬로, 시간조차 거짓을 허락하지 않는다.</span>
+                </div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title" data-i18n="dice.history">Cron Dice History</div>
             <div class="table-wrap">
                 <table>
                     <thead><tr>
@@ -547,6 +543,7 @@
                     <tbody id="dice-table"></tbody>
                 </table>
             </div>
+            <button class="btn btn-load-more" id="dice-load-more" style="display:none" data-i18n="loadMore">Load More</button>
         </div>
     </div>
 
@@ -576,8 +573,8 @@
 <div id="toast" class="toast"></div>
 
 <script src="js/qrcode.min.js"></script>
-<script src="js/i18n.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/app.js"></script>
+<script src="js/i18n.js?v=20260221a"></script>
+<script src="js/utils.js?v=20260221a"></script>
+<script src="js/app.js?v=20260221a"></script>
 </body>
 </html>
